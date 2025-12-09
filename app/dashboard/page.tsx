@@ -61,7 +61,7 @@ interface Folder {
   parentChain?: Array<{ id: number; name: string }>;
 }
 
-interface File {
+interface AppFile {
   id: number;
   name: string;
   url: string;
@@ -158,9 +158,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [folders, setFolders] = useState<Folder[]>([]);
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<AppFile[]>([]);
   const [allFolders, setAllFolders] = useState<Folder[]>([]); // All folders for Recent section
-  const [recentFilesData, setRecentFilesData] = useState<File[]>([]); // All recent files (from anywhere)
+  const [recentFilesData, setRecentFilesData] = useState<AppFile[]>([]); // All recent files (from anywhere)
   const [recentItemIds, setRecentItemIds] = useState<{ folders: Set<number>, files: Set<number> }>(() => getRecentItemIds());
   const [token, setToken] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -183,11 +183,11 @@ export default function DashboardPage() {
   const colorButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<AppFile | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [categoryModalMode, setCategoryModalMode] = useState<"folder" | "upload">("folder");
   const [pendingFolderData, setPendingFolderData] = useState<{ name: string; color: string } | null>(null);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingFile, setPendingFile] = useState<globalThis.File | null>(null);
   const [showCommandBar, setShowCommandBar] = useState(false);
   const [isToolbarStuck, setIsToolbarStuck] = useState(false);
   const toolbarSentinelRef = useRef<HTMLDivElement | null>(null);
@@ -413,7 +413,7 @@ export default function DashboardPage() {
 
           if (res.ok) {
             const data = await res.json();
-            return data.file as File;
+            return data.file as AppFile;
           }
 
           return null;
@@ -424,7 +424,7 @@ export default function DashboardPage() {
       });
 
       const fetchedFiles = await Promise.all(filePromises);
-      const validFiles = fetchedFiles.filter((f): f is File => f !== null);
+      const validFiles = fetchedFiles.filter((f): f is AppFile => f !== null);
       setRecentFilesData(validFiles);
     } catch (err) {
       console.error("Failed to fetch recent files:", err);
@@ -1116,7 +1116,7 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDownloadFile = async (file: File) => {
+  const handleDownloadFile = async (file: AppFile) => {
     if (!token) return;
     
     try {
@@ -1153,7 +1153,7 @@ export default function DashboardPage() {
     }
   };
 
-  const handlePreviewFile = async (file: File) => {
+  const handlePreviewFile = async (file: AppFile) => {
     if (!token) return;
     
     // Track file view

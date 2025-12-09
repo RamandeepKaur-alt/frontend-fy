@@ -64,7 +64,7 @@ interface Folder {
   }>;
 }
 
-interface File {
+interface AppFile {
   id: number;
   name: string;
   url: string;
