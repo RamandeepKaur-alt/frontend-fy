@@ -66,6 +66,11 @@ interface AppFile {
   folderId: number | null;
 }
 
+interface SearchableItem {
+  [key: string]: any; // index signature so Folder fits
+  name?: string;
+}
+
 const DEFAULT_CATEGORIES = ["Work", "Personal", "Documents", "Media", "Important"];
 
 export default function FolderDetailPage() {
@@ -661,7 +666,7 @@ export default function FolderDetailPage() {
       }
 
       // Optimistic update
-      const newFile: File = {
+      const newFile: AppFile = {
         id: data.file.id,
         name: data.file.name,
         url: data.file.url,
@@ -806,7 +811,7 @@ export default function FolderDetailPage() {
 
             // Add file to list if it's in the current folder
             if (targetFolderId === folderId || (!targetFolderId && !folderId)) {
-              const newFile: File = {
+              const newFile: AppFile = {
                 id: data.file.id,
                 name: data.file.name,
                 url: data.file.url,
@@ -864,7 +869,7 @@ export default function FolderDetailPage() {
     }
   };
 
-  const handleDownloadFile = async (file: File) => {
+  const handleDownloadFile = async (file: AppFile) => {
     if (!token) return;
     
     // Track file view
@@ -904,7 +909,7 @@ export default function FolderDetailPage() {
     }
   };
 
-  const handlePreviewFile = async (file: File) => {
+  const handlePreviewFile = async (file: AppFile) => {
     if (!token) return;
     
     // Track file view
@@ -989,6 +994,40 @@ export default function FolderDetailPage() {
       return newSet;
     });
   };
+
+  // Define ItemEntry type for sorting
+  type ItemEntry = {
+    type: 'folder' | 'file';
+    data: Folder | AppFile;
+  };
+
+  // Sort function
+  const sortItems = (items: ItemEntry[]) =>
+    [...items].sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === 'name') {
+        comparison = String(a.data.name).localeCompare(String(b.data.name));
+      } else if (sortBy === 'date') {
+        const dateA = Date.parse(a.data.createdAt);
+        const dateB = Date.parse(b.data.createdAt);
+        comparison = dateA - dateB;
+      } else if (sortBy === 'size') {
+        const sizeA = a.type === 'file' ? (a.data as AppFile).size : 0;
+        const sizeB = b.type === 'file' ? (b.data as AppFile).size : 0;
+        comparison = sizeA - sizeB;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+  // Filter subfolders and files using fuzzy search (moved here, before use)
+  const filteredSubfolders = fuzzySearch(subfolders, debouncedSearchQuery) as Folder[];
+  const filteredFiles = fuzzySearch(files, debouncedSearchQuery) as AppFile[];
+
+  // Combine folders and files into a single sorted list
+  const allItems: ItemEntry[] = sortItems([
+    ...filteredSubfolders.map(f => ({ type: 'folder' as const, data: f })),
+    ...filteredFiles.map(f => ({ type: 'file' as const, data: f })),
+  ]);
 
   const handleSelectAll = () => {
     const allIds = new Set<number>();
@@ -1103,11 +1142,17 @@ export default function FolderDetailPage() {
 
     try {
       const folderIds = Array.from(selectedItems).filter(id => selectedItemTypes.get(id) === 'folder');
-      const isAuthenticated = sessionStorage.getItem('locked_folders_authenticated') === 'true';
+      
+      // Prompt for password once for all folders
+      const password = prompt("Enter password to unlock selected folders:");
+      if (!password) return;
       
       for (const folderId of folderIds) {
-        if (isAuthenticated) {
-          await handleUnlock(folderId);
+        try {
+          await handleUnlock(folderId, password);
+        } catch (err) {
+          console.error(`Failed to unlock folder ${folderId}:`, err);
+          // Continue with next folder even if one fails
         }
       }
       
@@ -1219,43 +1264,18 @@ export default function FolderDetailPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [clipboard, selectedItems.size]);
 
-  // Filter subfolders and files using fuzzy search
-  const filteredSubfolders = fuzzySearch(subfolders, debouncedSearchQuery);
-  const filteredFiles = fuzzySearch(files, debouncedSearchQuery);
-
-  type ItemEntry =
-    | { type: 'folder'; data: Folder }
-    | { type: 'file'; data: AppFile };
-
-  // Sort function
-  const sortItems = (items: ItemEntry[]) => {
-    return [...items].sort((a, b) => {
-      let comparison = 0;
-      
-      if (sortBy === 'name') {
-        comparison = a.data.name.localeCompare(b.data.name);
-      } else if (sortBy === 'date') {
-        const dateA = new Date(a.data.createdAt).getTime();
-        const dateB = new Date(b.data.createdAt).getTime();
-        comparison = dateA - dateB;
-      } else if (sortBy === 'size') {
-        const sizeA = a.type === 'file' ? a.data.size : 0;
-        const sizeB = b.type === 'file' ? b.data.size : 0;
-        comparison = sizeA - sizeB;
+  // Add non-standard folder upload attributes at runtime to avoid TSX/JSX unknown-attribute errors
+  useEffect(() => {
+    const el = folderInputRef.current;
+    if (el) {
+      try {
+        el.setAttribute('webkitdirectory', '');
+        el.setAttribute('directory', '');
+      } catch {
+        // ignore in environments/browsers that don't support these attributes
       }
-      
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
-  };
-
-  // Combine folders and files, sorted by type (folders first, then files)
-  const unsortedItems: ItemEntry[] = [
-    ...filteredSubfolders.map(f => ({ type: "folder" as const, data: f })),
-    ...filteredFiles.map(f => ({ type: "file" as const, data: f }))
-  ];
-  
-  // Apply sorting
-  const allItems = sortItems(unsortedItems);
+    }
+  }, [folderInputRef]);
 
   if (!userName || loading) {
     return (
@@ -1376,16 +1396,19 @@ export default function FolderDetailPage() {
             onChange={handleFileUpload}
             className="hidden"
             disabled={uploading || uploadingFolder}
+            aria-label="Upload file"
+            aria-hidden="true"
           />
           <input
             ref={folderInputRef}
             type="file"
-            webkitdirectory=""
-            directory=""
             multiple
             onChange={handleFolderUpload}
             className="hidden"
             disabled={uploading || uploadingFolder}
+            aria-label="Upload folder"
+            aria-hidden="true"
+            {...({ webkitdirectory: "" , directory: "" } as any)}
           />
           {/* Upload Progress */}
           {uploadingFolder && (
@@ -1672,7 +1695,7 @@ export default function FolderDetailPage() {
 
                     if (res.ok) {
                       const data = await res.json();
-                      const newFile: File = {
+                      const newFile: AppFile = {
                         id: data.file.id,
                         name: data.file.name,
                         url: data.file.url,
@@ -1734,7 +1757,7 @@ export default function FolderDetailPage() {
 
                     if (res.ok) {
                       const data = await res.json();
-                      const newFile: File = {
+                      const newFile: AppFile = {
                         id: data.file.id,
                         name: data.file.name,
                         url: data.file.url,
@@ -1818,7 +1841,6 @@ export default function FolderDetailPage() {
                           onPreview={handlePreviewFile}
                           onLock={async () => {
                             // Refresh files after locking (file will be moved to locked folder)
-                            await fetchFiles();
                             await fetchFolder();
                           }}
                           isSelected={selectedItems.has(item.data.id)}
@@ -1981,8 +2003,10 @@ export default function FolderDetailPage() {
                   setSelectedFile(null);
                 }}
                 className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                aria-label="Close modal"
+                title="Close modal"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -2105,7 +2129,7 @@ export default function FolderDetailPage() {
                 value={passwordInput}
                 onChange={(e) => {
                   setPasswordInput(e.target.value);
-                  setPasswordError("");
+                                                                     setPasswordError("");
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && passwordInput.trim()) {

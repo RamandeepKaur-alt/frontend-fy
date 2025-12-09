@@ -39,17 +39,7 @@ import { getRecentItemIds, addRecentItem, addRecentItemAndNotify, getRecentItems
 import { buildFolderPath } from "../utils/folderPath";
 import { getEnabledCategories } from "../utils/categoryManagement";
 
-// FIX for Vercel TypeScript error
-type AnyFile = globalThis.File | {
-  id?: number;
-  name?: string;
-  url?: string;
-  mimetype?: string;
-  createdAt?: string;
-  folderId?: number | null;
-};
-
-
+// (removed unused AnyFile to avoid linter/TS warnings)
 interface Folder {
   id: number;
   name: string;
@@ -532,15 +522,14 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!token) return;
 
-    const handleCategoryClick = async (event: CustomEvent<{ category: string }>) => {
-      const category = event.detail.category;
+    const handleCategoryClick = async (e: Event) => {
+      const event = e as CustomEvent<{ category: string }>;;
+      const category = event?.detail?.category;
+      if (!category) return;
 
       try {
-        // Find the category folder
         const categoryFolderId = await getOrCreateCategoryFolder(category);
-        
         if (categoryFolderId) {
-          // Navigate to category folder and update URL with category parameter
           smoothNavigate(`/dashboard/folder/${categoryFolderId}?category=${encodeURIComponent(category)}`);
         } else {
           setError(`Failed to access ${category}. Please try again.`);
@@ -553,11 +542,8 @@ export default function DashboardPage() {
       }
     };
 
-    window.addEventListener('sidebar-category-clicked', handleCategoryClick as EventListener);
-
-    return () => {
-      window.removeEventListener('sidebar-category-clicked', handleCategoryClick as EventListener);
-    };
+    window.addEventListener('sidebar-category-clicked', handleCategoryClick);
+    return () => window.removeEventListener('sidebar-category-clicked', handleCategoryClick);
   }, [token, smoothNavigate]);
 
   const fetchFolders = async () => {
@@ -2072,7 +2058,7 @@ export default function DashboardPage() {
             ) : selectedFile.mimetype === "application/pdf" ? (
               <iframe
                 src={previewUrl}
-                className="w-full h-full border-0"
+                               className="w-full h-full border-0"
                 title={selectedFile.name}
               />
             ) : (selectedFile.mimetype === "application/msword" || 
