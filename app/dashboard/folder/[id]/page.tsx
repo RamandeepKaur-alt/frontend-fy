@@ -697,33 +697,41 @@ export default function FolderDetailPage() {
     setUploadProgress({ current: 0, total: files.length });
 
     try {
-      // Organize files by their folder structure (DOM File for uploads)
-      const fileMap: Map<string, (File & { webkitRelativePath?: string })[]> = new Map();
-      const folderPaths = new Set<string>();
+  // DOM File type to avoid conflict with backend File model
+  type DOMFile = File & { webkitRelativePath?: string };
 
-      files.forEach((file: File & { webkitRelativePath?: string }) => {
-        // Get the relative path from the folder structure
-        const fileWithPath = file as globalThis.File & { webkitRelativePath?: string };
-        const fullPath = fileWithPath.webkitRelativePath || file.name;
-        const pathParts = fullPath.split('/');
-        
-        if (pathParts.length > 1) {
-          // File is in a subfolder
-          const folderPath = pathParts.slice(0, -1).join('/');
-          folderPaths.add(folderPath);
-          
-          if (!fileMap.has(folderPath)) {
-            fileMap.set(folderPath, []);
-          }
-          fileMap.get(folderPath)!.push(file);
-        } else {
-          // File is in root of uploaded folder
-          if (!fileMap.has('')) {
-            fileMap.set('', []);
-          }
-          fileMap.get('')!.push(file);
-        }
-      });
+  // Map stores DOM files only
+  const fileMap: Map<string, DOMFile[]> = new Map();
+  const folderPaths = new Set<string>();
+
+  files.forEach((file: DOMFile) => {
+    // Get the relative path from the folder structure
+    const fullPath = file.webkitRelativePath || file.name;
+    const pathParts = fullPath.split('/');
+
+    if (pathParts.length > 1) {
+      // File is in a subfolder
+      const folderPath = pathParts.slice(0, -1).join('/');
+      folderPaths.add(folderPath);
+
+      if (!fileMap.has(folderPath)) {
+        fileMap.set(folderPath, []);
+      }
+
+      // ⬇ FIXED: Force TS to treat file as DOMFile
+      fileMap.get(folderPath)!.push(file as DOMFile);
+
+    } else {
+      // File is in root of uploaded folder
+      if (!fileMap.has('')) {
+        fileMap.set('', []);
+      }
+
+      // ⬇ FIXED: Force TS to treat file as DOMFile
+      fileMap.get('')!.push(file as DOMFile);
+    }
+  });
+
 
       // Create folders first, then upload files
       const folderIdMap = new Map<string, number>();
