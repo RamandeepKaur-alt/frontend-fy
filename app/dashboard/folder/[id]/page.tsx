@@ -34,11 +34,11 @@ import { useSmoothNavigation } from "../../../hooks/useSmoothNavigation";
 import { addRecentItem, addRecentItemAndNotify } from "../../../utils/recentItems";
 import ArcActionButton from "../../../components/ArcActionButton";
 import { BRAND_NAME } from "../../../config/brand";
+import { fuzzySearch, SearchableItem } from "../../../utils/fuzzySearch";
 
 type DOMFile = globalThis.File & { webkitRelativePath?: string };
 
-
-interface Folder {
+interface Folder extends SearchableItem {
   id: number;
   name: string;
   parentId: number | null;
@@ -58,7 +58,7 @@ interface Folder {
   }>;
 }
 
-interface AppFile {
+interface AppFile extends SearchableItem {
   id: number;
   name: string;
   url: string;
@@ -698,36 +698,33 @@ export default function FolderDetailPage() {
     setError("");
     setUploadProgress({ current: 0, total: files.length });
 
-try {
-  interface File extends globalThis.File {}
+    try {
+      interface File extends globalThis.File {}
 
-  type DOMFile = File & { webkitRelativePath?: string };
+      type DOMFile = File & { webkitRelativePath?: string };
 
-  // Map stores DOM files only
-  const fileMap: Map<string, DOMFile[]> = new Map();
-  const folderPaths = new Set<string>();
+      // Map stores DOM files only
+      const fileMap: Map<string, DOMFile[]> = new Map();
+      const folderPaths = new Set<string>();
 
-  files.forEach((f) => {
-     const file = f as DOMFile;
-     const fullPath = file.webkitRelativePath || file.name;
-     const pathParts = fullPath.split('/');
+      files.forEach((f) => {
+        const file = f as DOMFile;
+        const fullPath = file.webkitRelativePath || file.name;
+        const pathParts = fullPath.split('/');
 
-     if (pathParts.length > 1) {
-       const folderPath = pathParts.slice(0, -1).join('/');
-       folderPaths.add(folderPath);
+        if (pathParts.length > 1) {
+          const folderPath = pathParts.slice(0, -1).join('/');
+          folderPaths.add(folderPath);
 
-       if (!fileMap.has(folderPath)) fileMap.set(folderPath, []);
+          if (!fileMap.has(folderPath)) fileMap.set(folderPath, []);
 
-       fileMap.get(folderPath)!.push(file as DOMFile);
+          fileMap.get(folderPath)!.push(file as DOMFile);
+        } else {
+          if (!fileMap.has('')) fileMap.set('', []);
 
-
-     } else {
-       if (!fileMap.has('')) fileMap.set('', []);
-
-       fileMap.get('')!.push(file as DOMFile);
-     }
-  });
-
+          fileMap.get('')!.push(file as DOMFile);
+        }
+      });
 
       // Create folders first, then upload files
       const folderIdMap = new Map<string, number>();
@@ -1018,10 +1015,13 @@ try {
       return sortOrder === 'asc' ? comparison : -comparison;
     });
 
-  // Filter subfolders and files using fuzzy search (moved here, before use)
-  // Workaround: cast through unknown to bypass the stray SearchableItem constraint
-  const filteredSubfolders = fuzzySearch(subfolders, debouncedSearchQuery) as unknown as Folder[];
-  const filteredFiles = fuzzySearch(files, debouncedSearchQuery) as unknown as AppFile[];
+  // Filter subfolders and files using shared fuzzy search utility
+  const filteredSubfolders = debouncedSearchQuery
+    ? fuzzySearch<Folder>(subfolders, debouncedSearchQuery)
+    : subfolders;
+  const filteredFiles = debouncedSearchQuery
+    ? fuzzySearch<AppFile>(files, debouncedSearchQuery)
+    : files;
 
   // Combine folders and files into a single sorted list
   const allItems: ItemEntry[] = sortItems([
@@ -2205,18 +2205,5 @@ try {
         onFavorites={() => smoothNavigate("/dashboard/important")}
       />
     </div>
-  );
-}
-
-export function fuzzySearch<T extends { name: string }>(
-  items: T[],
-  query?: string
-): T[] {
-  if (!query || !query.trim()) return items;
-
-  const lowerQuery = query.toLowerCase();
-
-  return items.filter(item =>
-    item.name.toLowerCase().includes(lowerQuery)
   );
 }
