@@ -698,10 +698,15 @@ export default function FolderDetailPage() {
 
     try {
       // Organize files by their folder structure
-      const fileMap = new Map<string, File[]>();
+      type UploadFileWrapper = {
+        dbFile: File; // DB File shape with placeholders
+        browserFile: globalThis.File; // actual browser File used for upload
+      };
+
+      const fileMap = new Map<string, UploadFileWrapper[]>();
       const folderPaths = new Set<string>();
 
-      files.forEach((file) => {
+      files.forEach((file: globalThis.File) => {
         // Get the relative path from the folder structure
         const fullPath = (file as any).webkitRelativePath || file.name;
         const pathParts = fullPath.split('/');
@@ -714,13 +719,35 @@ export default function FolderDetailPage() {
           if (!fileMap.has(folderPath)) {
             fileMap.set(folderPath, []);
           }
-          fileMap.get(folderPath)!.push(file);
+          fileMap.get(folderPath)!.push({
+            dbFile: {
+              id: 0,
+              name: file.name,
+              url: "",
+              size: file.size,
+              mimetype: file.type,
+              createdAt: "",
+              folderId: folderId ?? null,
+            },
+            browserFile: file,
+          });
         } else {
           // File is in root of uploaded folder
           if (!fileMap.has('')) {
             fileMap.set('', []);
           }
-          fileMap.get('')!.push(file);
+          fileMap.get('')!.push({
+            dbFile: {
+              id: 0,
+              name: file.name,
+              url: "",
+              size: file.size,
+              mimetype: file.type,
+              createdAt: "",
+              folderId: folderId ?? null,
+            },
+            browserFile: file,
+          });
         }
       });
 
@@ -781,9 +808,9 @@ export default function FolderDetailPage() {
           targetFolderId = folderIdMap.get(folderPath)!;
         }
 
-        for (const file of folderFiles) {
+        for (const { browserFile } of folderFiles) {
           const formData = new FormData();
-          formData.append("file", file);
+          formData.append("file", browserFile);
           if (targetFolderId) {
             formData.append("folderId", targetFolderId.toString());
           } else {
