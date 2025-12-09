@@ -698,12 +698,7 @@ export default function FolderDetailPage() {
 
     try {
       // Organize files by their folder structure
-      type UploadFileWrapper = {
-        dbFile: File; // DB File shape with placeholders
-        browserFile: globalThis.File; // actual browser File used for upload
-      };
-
-      const fileMap = new Map<string, UploadFileWrapper[]>();
+      const fileMap = new Map<string, any[]>();
       const folderPaths = new Set<string>();
 
       files.forEach((file: globalThis.File) => {
@@ -720,34 +715,34 @@ export default function FolderDetailPage() {
             fileMap.set(folderPath, []);
           }
           fileMap.get(folderPath)!.push({
-            dbFile: {
-              id: 0,
-              name: file.name,
-              url: "",
-              size: file.size,
-              mimetype: file.type,
-              createdAt: "",
-              folderId: folderId ?? null,
-            },
+            id: "",
+            url: "",
+            mimetype: file.type,
+            createdAt: new Date(),
+            folderId: "",
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            lastModified: file.lastModified,
             browserFile: file,
-          });
+          } as any);
         } else {
           // File is in root of uploaded folder
           if (!fileMap.has('')) {
             fileMap.set('', []);
           }
           fileMap.get('')!.push({
-            dbFile: {
-              id: 0,
-              name: file.name,
-              url: "",
-              size: file.size,
-              mimetype: file.type,
-              createdAt: "",
-              folderId: folderId ?? null,
-            },
+            id: "",
+            url: "",
+            mimetype: file.type,
+            createdAt: new Date(),
+            folderId: "",
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            lastModified: file.lastModified,
             browserFile: file,
-          });
+          } as any);
         }
       });
 
@@ -808,7 +803,8 @@ export default function FolderDetailPage() {
           targetFolderId = folderIdMap.get(folderPath)!;
         }
 
-        for (const { browserFile } of folderFiles) {
+        for (const fileWrapper of folderFiles) {
+          const browserFile = (fileWrapper as any).browserFile as globalThis.File;
           const formData = new FormData();
           formData.append("file", browserFile);
           if (targetFolderId) {
