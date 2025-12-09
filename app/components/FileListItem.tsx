@@ -17,6 +17,7 @@ import {
 import { detectFileType, formatFileSize } from "../utils/fileTypeDetection";
 import { useToast } from "../contexts/ToastContext";
 import RowItem from "./RowItem";
+import { API_BASE } from "../utils/authClient";
 
 interface FileMeta {
   id: number;
@@ -150,7 +151,7 @@ export default function FileListItem({
       const folderName = file.name.replace(/\.[^/.]+$/, "") || "Locked Files";
       
       // Create a locked folder
-      const folderRes = await fetch("http://localhost:5000/api/folders/create", {
+      const folderRes = await fetch("${API_BASE}/api/folders/create", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -168,7 +169,7 @@ export default function FileListItem({
         const newFolderId = folderData.folder.id;
         
         // Lock the folder
-        await fetch(`http://localhost:5000/api/folders/lock/${newFolderId}`, {
+        await fetch(`${API_BASE}/api/folders/lock/${newFolderId}`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -177,7 +178,7 @@ export default function FileListItem({
         });
         
         // Move the file to the locked folder
-        await fetch(`http://localhost:5000/api/files/${file.id}/move`, {
+        await fetch(`${API_BASE}/api/files/${file.id}/move`, {
           method: "PUT",
           headers: {
             "Authorization": `Bearer ${token}`,

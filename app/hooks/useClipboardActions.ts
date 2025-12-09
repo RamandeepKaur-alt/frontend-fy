@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { useClipboard, ClipboardItem } from "../contexts/ClipboardContext";
+import { API_BASE } from "../utils/authClient";
 
 /**
  * useClipboardActions Hook
@@ -143,7 +144,7 @@ export function useClipboardActions() {
       const type = itemTypes.get(id);
       if (!type) return;
 
-      const promise = fetch(`http://localhost:5000/api/items/${id}?type=${type}`, {
+      const promise = fetch(`${API_BASE}/api/items/${id}?type=${type}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -188,7 +189,7 @@ export function useClipboardActions() {
       throw new Error("Invalid item type");
     }
 
-    const res = await fetch(`http://localhost:5000/api/items/${firstId}/share?type=${type}`, {
+    const res = await fetch(`${API_BASE}/api/items/${firstId}/share?type=${type}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,

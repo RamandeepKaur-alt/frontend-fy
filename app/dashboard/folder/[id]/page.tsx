@@ -35,6 +35,7 @@ import { addRecentItem, addRecentItemAndNotify } from "../../../utils/recentItem
 import ArcActionButton from "../../../components/ArcActionButton";
 import { BRAND_NAME } from "../../../config/brand";
 import { fuzzySearch, SearchableItem } from "../../../utils/fuzzySearch";
+import { API_BASE } from "../../../utils/authClient";
 
 type DOMFile = globalThis.File & { webkitRelativePath?: string };
 
@@ -210,7 +211,7 @@ export default function FolderDetailPage() {
         };
 
         // First, try to find an existing folder with this name at root level
-        const res = await fetch("http://localhost:5000/api/folders?parentId=", {
+        const res = await fetch("${API_BASE}/api/folders?parentId=", {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -227,7 +228,7 @@ export default function FolderDetailPage() {
           }
 
           // If not found, create it
-          const createRes = await fetch("http://localhost:5000/api/folders/create", {
+          const createRes = await fetch("${API_BASE}/api/folders/create", {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -290,8 +291,8 @@ export default function FolderDetailPage() {
       // Check if we have a stored password for this folder
       const storedPassword = password || sessionStorage.getItem(`folder_password_${folderId}`);
       const url = storedPassword 
-        ? `http://localhost:5000/api/folders/${folderId}?password=${encodeURIComponent(storedPassword)}`
-        : `http://localhost:5000/api/folders/${folderId}`;
+        ? `${API_BASE}/api/folders/${folderId}?password=${encodeURIComponent(storedPassword)}`
+        : `${API_BASE}/api/folders/${folderId}`;
 
       const res = await fetch(url, {
         method: "GET",
@@ -358,7 +359,7 @@ export default function FolderDetailPage() {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:5000/api/folders/create", {
+      const res = await fetch("${API_BASE}/api/folders/create", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -417,7 +418,7 @@ export default function FolderDetailPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/folders/${id}/rename`, {
+      const res = await fetch(`${API_BASE}/api/folders/${id}/rename`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -450,7 +451,7 @@ export default function FolderDetailPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/folders/lock/${id}`, {
+      const res = await fetch(`${API_BASE}/api/folders/lock/${id}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -478,7 +479,7 @@ export default function FolderDetailPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/folders/unlock/${id}`, {
+      const res = await fetch(`${API_BASE}/api/folders/unlock/${id}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -506,7 +507,7 @@ export default function FolderDetailPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/folders/important/${id}`, {
+      const res = await fetch(`${API_BASE}/api/folders/important/${id}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -532,7 +533,7 @@ export default function FolderDetailPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/folders/${id}`, {
+      const res = await fetch(`${API_BASE}/api/folders/${id}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -585,7 +586,7 @@ export default function FolderDetailPage() {
 
     try {
       // Verify password by trying to access the folder with password
-      const res = await fetch(`http://localhost:5000/api/folders/${folderIdToAccess}?password=${encodeURIComponent(passwordInput)}`, {
+      const res = await fetch(`${API_BASE}/api/folders/${folderIdToAccess}?password=${encodeURIComponent(passwordInput)}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -646,7 +647,7 @@ export default function FolderDetailPage() {
         formData.append("folderId", "");
       }
 
-      const res = await fetch("http://localhost:5000/api/files/upload", {
+      const res = await fetch("${API_BASE}/api/files/upload", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -748,7 +749,7 @@ export default function FolderDetailPage() {
         }
 
         // Create folder
-        const folderRes = await fetch("http://localhost:5000/api/folders/create", {
+        const folderRes = await fetch("${API_BASE}/api/folders/create", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -792,7 +793,7 @@ export default function FolderDetailPage() {
             formData.append("folderId", "");
           }
 
-          const res = await fetch("http://localhost:5000/api/files/upload", {
+          const res = await fetch("${API_BASE}/api/files/upload", {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -846,7 +847,7 @@ export default function FolderDetailPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/files/${id}`, {
+      const res = await fetch(`${API_BASE}/api/files/${id}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -872,7 +873,7 @@ export default function FolderDetailPage() {
     addRecentItem(file.id, 'file', file.name);
     
     try {
-      const res = await fetch(`http://localhost:5000/api/files/${file.id}/download`, {
+      const res = await fetch(`${API_BASE}/api/files/${file.id}/download`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -917,7 +918,7 @@ export default function FolderDetailPage() {
     
     try {
       // Fetch file with authentication
-      const res = await fetch(`http://localhost:5000/api/files/${file.id}/download`, {
+      const res = await fetch(`${API_BASE}/api/files/${file.id}/download`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -1189,7 +1190,7 @@ export default function FolderDetailPage() {
       for (const id of selectedItems) {
         const type = selectedItemTypes.get(id);
         if (type === 'folder') {
-          const res = await fetch(`http://localhost:5000/api/folders/${id}/move`, {
+          const res = await fetch(`${API_BASE}/api/folders/${id}/move`, {
             method: "PUT",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -1210,7 +1211,7 @@ export default function FolderDetailPage() {
             addRecentItem(id, 'folder', folderData.folder.name);
           }
         } else {
-          const res = await fetch(`http://localhost:5000/api/files/${id}/move`, {
+          const res = await fetch(`${API_BASE}/api/files/${id}/move`, {
             method: "PUT",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -1495,7 +1496,7 @@ export default function FolderDetailPage() {
                     if (item.type === 'folder') {
                       if (clipboard.type === 'cut') {
                         // For cut: Move the folder to the new location
-                        const moveRes = await fetch(`http://localhost:5000/api/folders/${item.id}/move`, {
+                        const moveRes = await fetch(`${API_BASE}/api/folders/${item.id}/move`, {
                           method: "PUT",
                           headers: {
                             "Authorization": `Bearer ${token}`,
@@ -1510,7 +1511,7 @@ export default function FolderDetailPage() {
                         }
                       } else {
                         // For copy: Create a copy of the folder
-                        const res = await fetch(`http://localhost:5000/api/folders/${item.id}`, {
+                        const res = await fetch(`${API_BASE}/api/folders/${item.id}`, {
                           headers: {
                             "Authorization": `Bearer ${token}`,
                           },
@@ -1522,7 +1523,7 @@ export default function FolderDetailPage() {
                         
                         const folderData = await res.json();
                         
-                        const createRes = await fetch("http://localhost:5000/api/folders/create", {
+                        const createRes = await fetch("${API_BASE}/api/folders/create", {
                           method: "POST",
                           headers: {
                             "Authorization": `Bearer ${token}`,
@@ -1543,7 +1544,7 @@ export default function FolderDetailPage() {
                     } else if (item.type === 'file') {
                       if (clipboard.type === 'cut') {
                         // For cut: Move the file to the new location
-                        const moveRes = await fetch(`http://localhost:5000/api/files/${item.id}/move`, {
+                        const moveRes = await fetch(`${API_BASE}/api/files/${item.id}/move`, {
                           method: "PUT",
                           headers: {
                             "Authorization": `Bearer ${token}`,
@@ -1685,7 +1686,7 @@ export default function FolderDetailPage() {
                       formData.append("folderId", "");
                     }
 
-                    const res = await fetch("http://localhost:5000/api/files/upload", {
+                    const res = await fetch("${API_BASE}/api/files/upload", {
                       method: "POST",
                       headers: {
                         "Authorization": `Bearer ${token}`,
@@ -1747,7 +1748,7 @@ export default function FolderDetailPage() {
                       formData.append("folderId", "");
                     }
 
-                    const res = await fetch("http://localhost:5000/api/files/upload", {
+                    const res = await fetch("${API_BASE}/api/files/upload", {
                       method: "POST",
                       headers: {
                         "Authorization": `Bearer ${token}`,

@@ -24,6 +24,7 @@ import { useClipboard } from "../../contexts/ClipboardContext";
 import { useClipboardActions } from "../../hooks/useClipboardActions";
 import { useToast } from "../../contexts/ToastContext";
 import { useSmoothNavigation } from "../../hooks/useSmoothNavigation";
+import { API_BASE } from "../../utils/authClient";
 
 interface Folder extends SearchableItem {
   id: number;
@@ -124,7 +125,7 @@ export default function ImportantFoldersPage() {
           "Important": "orange",
         };
 
-        const res = await fetch("http://localhost:5000/api/folders?parentId=", {
+        const res = await fetch("${API_BASE}/api/folders?parentId=", {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -140,7 +141,7 @@ export default function ImportantFoldersPage() {
             return categoryFolder.id;
           }
 
-          const createRes = await fetch("http://localhost:5000/api/folders/create", {
+          const createRes = await fetch("${API_BASE}/api/folders/create", {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -199,7 +200,7 @@ export default function ImportantFoldersPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/folders/important", {
+      const res = await fetch("${API_BASE}/api/folders/important", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -228,7 +229,7 @@ export default function ImportantFoldersPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/folders/${id}`, {
+      const res = await fetch(`${API_BASE}/api/folders/${id}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -259,7 +260,7 @@ export default function ImportantFoldersPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/folders/important/${id}`, {
+      const res = await fetch(`${API_BASE}/api/folders/important/${id}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -295,7 +296,7 @@ export default function ImportantFoldersPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/folders/${id}`, {
+      const res = await fetch(`${API_BASE}/api/folders/${id}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`,

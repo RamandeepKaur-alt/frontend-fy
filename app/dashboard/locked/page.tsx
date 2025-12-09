@@ -29,6 +29,7 @@ import { useClipboard } from "../../contexts/ClipboardContext";
 import { useClipboardActions } from "../../hooks/useClipboardActions";
 import { useToast } from "../../contexts/ToastContext";
 import { BRAND_NAME } from "../../config/brand";
+import { API_BASE } from "../../utils/authClient";
 
 interface Folder extends SearchableItem {
   id: number;
@@ -104,7 +105,7 @@ export default function LockedFoldersPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/files/unlock/${id}`, {
+      const res = await fetch(`${API_BASE}/api/files/unlock/${id}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -128,7 +129,7 @@ export default function LockedFoldersPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/files/${file.id}/download`, {
+      const res = await fetch(`${API_BASE}/api/files/${file.id}/download`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -213,7 +214,7 @@ export default function LockedFoldersPage() {
           "Important": "orange",
         };
 
-        const res = await fetch("http://localhost:5000/api/folders?parentId=", {
+        const res = await fetch("${API_BASE}/api/folders?parentId=", {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -229,7 +230,7 @@ export default function LockedFoldersPage() {
             return categoryFolder.id;
           }
 
-          const createRes = await fetch("http://localhost:5000/api/folders/create", {
+          const createRes = await fetch("${API_BASE}/api/folders/create", {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -296,7 +297,7 @@ export default function LockedFoldersPage() {
       formData.append("folderId", ""); // Keep out of normal folders; locked flag controls visibility
       formData.append("locked", "true");
 
-      const res = await fetch("http://localhost:5000/api/files/upload", {
+      const res = await fetch("${API_BASE}/api/files/upload", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -344,7 +345,7 @@ export default function LockedFoldersPage() {
 
     try {
       // Check if user has lock password set
-      const lockPasswordRes = await fetch("http://localhost:5000/api/auth/users/check-lock-password", {
+      const lockPasswordRes = await fetch("${API_BASE}/api/auth/users/check-lock-password", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -360,7 +361,7 @@ export default function LockedFoldersPage() {
       }
 
       // Check if there are any locked folders
-      const foldersRes = await fetch("http://localhost:5000/api/folders/locked", {
+      const foldersRes = await fetch("${API_BASE}/api/folders/locked", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -398,7 +399,7 @@ export default function LockedFoldersPage() {
     if (!token) return;
 
     try {
-      const res = await fetch("http://localhost:5000/api/files/locked", {
+      const res = await fetch("${API_BASE}/api/files/locked", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -423,7 +424,7 @@ export default function LockedFoldersPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/folders/locked", {
+      const res = await fetch("${API_BASE}/api/folders/locked", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -458,7 +459,7 @@ export default function LockedFoldersPage() {
 
     try {
       // Verify user's lock password
-      const res = await fetch("http://localhost:5000/api/auth/users/verify-lock-password", {
+      const res = await fetch("${API_BASE}/api/auth/users/verify-lock-password", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -509,7 +510,7 @@ export default function LockedFoldersPage() {
 
     try {
       // Set user's lock password
-      const res = await fetch("http://localhost:5000/api/auth/users/set-lock-password", {
+      const res = await fetch("${API_BASE}/api/auth/users/set-lock-password", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -544,7 +545,7 @@ export default function LockedFoldersPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/folders/${id}/rename`, {
+      const res = await fetch(`${API_BASE}/api/folders/${id}/rename`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -574,7 +575,7 @@ export default function LockedFoldersPage() {
       // If user is authenticated in locked folders session, skip password check
       const skipPasswordCheck = sessionStorage.getItem('locked_folders_authenticated') === 'true';
       
-      const res = await fetch(`http://localhost:5000/api/folders/unlock/${id}`, {
+      const res = await fetch(`${API_BASE}/api/folders/unlock/${id}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -602,7 +603,7 @@ export default function LockedFoldersPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/folders/important/${id}`, {
+      const res = await fetch(`${API_BASE}/api/folders/important/${id}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -628,7 +629,7 @@ export default function LockedFoldersPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/folders/${id}`, {
+      const res = await fetch(`${API_BASE}/api/folders/${id}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -722,7 +723,7 @@ export default function LockedFoldersPage() {
     
     try {
       for (const id of selectedFolderIds) {
-        const res = await fetch(`http://localhost:5000/api/folders/${id}/move`, {
+        const res = await fetch(`${API_BASE}/api/folders/${id}/move`, {
           method: "PUT",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -1256,7 +1257,7 @@ export default function LockedFoldersPage() {
             if (!token) return null;
             
             try {
-              const res = await fetch("http://localhost:5000/api/folders/create", {
+              const res = await fetch("${API_BASE}/api/folders/create", {
                 method: "POST",
                 headers: {
                   "Authorization": `Bearer ${token}`,

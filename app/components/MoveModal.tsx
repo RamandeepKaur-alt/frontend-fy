@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, FolderOpen, ChevronRight } from "lucide-react";
+import { API_BASE } from "../utils/authClient";
 
 interface Folder {
   id: number;
@@ -70,7 +71,7 @@ export default function MoveModal({
     if (!token) return;
 
     try {
-      const res = await fetch("http://localhost:5000/api/folders/contents", {
+      const res = await fetch(`${API_BASE}/api/folders/contents`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,

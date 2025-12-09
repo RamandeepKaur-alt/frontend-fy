@@ -38,6 +38,7 @@ import { useSmoothNavigation } from "../hooks/useSmoothNavigation";
 import { getRecentItemIds, addRecentItem, addRecentItemAndNotify, getRecentItems, removeRecentItem } from "../utils/recentItems";
 import { buildFolderPath } from "../utils/folderPath";
 import { getEnabledCategories } from "../utils/categoryManagement";
+import { API_BASE } from "../utils/authClient";
 
 // (removed unused AnyFile to avoid linter/TS warnings)
 interface Folder extends SearchableItem {
@@ -329,7 +330,7 @@ export default function DashboardPage() {
       // Fetch each folder individually
       const folderPromises = folderIds.map(async (folderId) => {
         try {
-          const res = await fetch(`http://localhost:5000/api/folders/${folderId}`, {
+          const res = await fetch(`${API_BASE}/api/folders/${folderId}`, {
             method: "GET",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -393,7 +394,7 @@ export default function DashboardPage() {
 
       const filePromises = fileIds.map(async (fileId) => {
         try {
-          const res = await fetch(`http://localhost:5000/api/files/${fileId}`, {
+          const res = await fetch(`${API_BASE}/api/files/${fileId}`, {
             method: "GET",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -551,7 +552,7 @@ export default function DashboardPage() {
 
     try {
       // Fetch root folders (parentId=null)
-      const res = await fetch("http://localhost:5000/api/folders?parentId=", {
+      const res = await fetch("${API_BASE}/api/folders?parentId=", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -580,7 +581,7 @@ export default function DashboardPage() {
     if (!token) return;
 
     try {
-      const res = await fetch("http://localhost:5000/api/files/root", {
+      const res = await fetch("${API_BASE}/api/files/root", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -615,7 +616,7 @@ export default function DashboardPage() {
       };
 
       // First, try to find an existing folder with this name at root level
-      const res = await fetch("http://localhost:5000/api/folders?parentId=", {
+      const res = await fetch("${API_BASE}/api/folders?parentId=", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -632,7 +633,7 @@ export default function DashboardPage() {
         }
 
         // If not found, create it
-        const createRes = await fetch("http://localhost:5000/api/folders/create", {
+        const createRes = await fetch("${API_BASE}/api/folders/create", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -695,7 +696,7 @@ export default function DashboardPage() {
 
       if (categoryModalMode === "folder" && pendingFolderData) {
         // Create folder in the selected category
-        const res = await fetch("http://localhost:5000/api/folders/create", {
+        const res = await fetch("${API_BASE}/api/folders/create", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -752,7 +753,7 @@ export default function DashboardPage() {
         formData.append("file", pendingFile);
         formData.append("folderId", categoryFolderId.toString());
 
-        const res = await fetch("http://localhost:5000/api/files/upload", {
+        const res = await fetch("${API_BASE}/api/files/upload", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -799,7 +800,7 @@ export default function DashboardPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/folders/${id}/rename`, {
+      const res = await fetch(`${API_BASE}/api/folders/${id}/rename`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -836,7 +837,7 @@ export default function DashboardPage() {
 
     try {
       // Lock folder without requiring password
-      const res = await fetch(`http://localhost:5000/api/folders/lock/${id}`, {
+      const res = await fetch(`${API_BASE}/api/folders/lock/${id}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -865,7 +866,7 @@ export default function DashboardPage() {
       // Check if user is authenticated in locked folders session
       const skipPasswordCheck = sessionStorage.getItem('locked_folders_authenticated') === 'true';
       
-      const res = await fetch(`http://localhost:5000/api/folders/unlock/${id}`, {
+      const res = await fetch(`${API_BASE}/api/folders/unlock/${id}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -895,7 +896,7 @@ export default function DashboardPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/folders/important/${id}`, {
+      const res = await fetch(`${API_BASE}/api/folders/important/${id}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -921,7 +922,7 @@ export default function DashboardPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/folders/${id}`, {
+      const res = await fetch(`${API_BASE}/api/folders/${id}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -1080,7 +1081,7 @@ export default function DashboardPage() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/files/${id}`, {
+      const res = await fetch(`${API_BASE}/api/files/${id}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -1105,7 +1106,7 @@ export default function DashboardPage() {
     if (!token) return;
     
     try {
-      const res = await fetch(`http://localhost:5000/api/files/${file.id}/download`, {
+      const res = await fetch(`${API_BASE}/api/files/${file.id}/download`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -1150,7 +1151,7 @@ export default function DashboardPage() {
     
     try {
       // Fetch file with authentication
-      const res = await fetch(`http://localhost:5000/api/files/${file.id}/download`, {
+      const res = await fetch(`${API_BASE}/api/files/${file.id}/download`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -1422,7 +1423,7 @@ export default function DashboardPage() {
       for (const id of selectedItems) {
         const type = selectedItemTypes.get(id);
         if (type === 'folder') {
-          const res = await fetch(`http://localhost:5000/api/folders/${id}/move`, {
+          const res = await fetch(`${API_BASE}/api/folders/${id}/move`, {
             method: "PUT",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -1443,7 +1444,7 @@ export default function DashboardPage() {
             addRecentItem(id, 'folder', folderData.folder.name);
           }
         } else {
-          const res = await fetch(`http://localhost:5000/api/files/${id}/move`, {
+          const res = await fetch(`${API_BASE}/api/files/${id}/move`, {
             method: "PUT",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -2168,7 +2169,7 @@ export default function DashboardPage() {
             if (!token) return null;
             
             try {
-              const res = await fetch("http://localhost:5000/api/folders/create", {
+              const res = await fetch("${API_BASE}/api/folders/create", {
                 method: "POST",
                 headers: {
                   "Authorization": `Bearer ${token}`,

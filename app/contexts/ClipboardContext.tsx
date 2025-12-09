@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { API_BASE } from "../utils/authClient";
 
 /**
  * Clipboard Item Interface
@@ -110,7 +111,7 @@ export function ClipboardProvider({ children, token }: { children: ReactNode; to
       for (const item of clipboard.items) {
         if (clipboard.mode === 'cut') {
           // Move item to target folder
-          const moveRes = await fetch(`http://localhost:5000/api/items/${item.id}/move`, {
+          const moveRes = await fetch(`${API_BASE}/api/items/${item.id}/move`, {
             method: "PUT",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -129,7 +130,7 @@ export function ClipboardProvider({ children, token }: { children: ReactNode; to
 
         } else if (clipboard.mode === 'copy') {
           // Duplicate item in target folder
-          const duplicateRes = await fetch(`http://localhost:5000/api/items/${item.id}/duplicate`, {
+          const duplicateRes = await fetch(`${API_BASE}/api/items/${item.id}/duplicate`, {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,

@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, FileText, Sparkles, Loader2, X, Check, File as FileIcon, Download, ArrowLeft } from "lucide-react";
 import { useToast } from "../../contexts/ToastContext";
+import { API_BASE } from "../../utils/authClient";
 
 interface AnalysisResult {
   summary: string;
@@ -57,7 +58,7 @@ export default function MagicLensPage() {
       formData.append("file", selectedFile);
 
       // Analyze file directly - this endpoint doesn't save to database
-      const analyzeRes = await fetch("http://localhost:5000/api/magic-lens/analyze-upload", {
+      const analyzeRes = await fetch(`${API_BASE}/api/magic-lens/analyze-upload`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -85,7 +86,7 @@ export default function MagicLensPage() {
       
       // More specific error messages
       if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
-        setError("Cannot connect to server. Please make sure the backend server is running on http://localhost:5000");
+        setError(`Cannot connect to server. Please make sure the backend server is reachable at ${API_BASE}`);
       } else if (err.message.includes("401") || err.message.includes("Unauthorized")) {
         setError("Authentication failed. Please log in again.");
       } else {
@@ -159,7 +160,7 @@ export default function MagicLensPage() {
       formData.append("file", fileObj);
       formData.append("folderId", "");
 
-      const uploadRes = await fetch("http://localhost:5000/api/files/upload", {
+      const uploadRes = await fetch(`${API_BASE}/api/files/upload`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -200,7 +201,7 @@ export default function MagicLensPage() {
       formData.append("file", fileObj);
       formData.append("folderId", "");
 
-      const uploadRes = await fetch("http://localhost:5000/api/files/upload", {
+      const uploadRes = await fetch("${API_BASE}/api/files/upload", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
