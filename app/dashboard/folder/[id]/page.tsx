@@ -1,7 +1,11 @@
 "use client";
 
-// Browser upload file type (kept separate from DB File model)
-type UploadFile = globalThis.File;
+interface UploadFile {
+  name: string;
+  size: number;
+  type: string;
+  lastModified: number;
+}
 
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -701,7 +705,7 @@ export default function FolderDetailPage() {
 
     try {
       // Organize files by their folder structure (UploadFile is the browser File type)
-      const fileMap = new Map<string, UploadFile[]>();
+      const fileMap: Map<string, UploadFile[]> = new Map();
       const folderPaths = new Set<string>();
 
       files.forEach((file: UploadFile) => {
