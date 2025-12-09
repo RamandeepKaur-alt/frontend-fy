@@ -1,26 +1,424 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #FAFAFA;
+  --foreground: #0F172A;
+  --app-font: 'Inter', sans-serif;
+}
+
+/* Landing page section reveal animations */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s cubic-bezier(0.2, 0.9, 0.3, 1),
+              transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@media (max-width: 768px) {
+  .reveal {
+    transform: translateY(8px);
+  }
+}
+
+.reveal.reveal--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Ensure sections targeted by nav links account for header height if it becomes sticky */
+.landing-section {
+  scroll-margin-top: 80px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
 }
 
+/* Prevent dark mode from causing black flash */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #FAFAFA;
+    --foreground: #0F172A;
   }
 }
 
+/* Password input toggle helpers */
+.password-input-wrapper {
+  position: relative;
+}
+
+.password-toggle-button {
+  transition: opacity 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+html {
+  background: #FAFAFA;
+  min-height: 100vh;
+  scroll-behavior: smooth;
+}
+
 body {
-  background: var(--background);
+  background: #FAFAFA;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+body:not(.landing-page) {
+  font-family: var(--app-font);
+}
+
+/* Toast Animations */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+.toast-item {
+  transition: all 0.3s ease-out;
+}
+
+.toast-item.removing {
+  animation: slide-down 0.3s ease-out forwards;
+}
+
+/* Arc Action Button Animations */
+@keyframes arcAppear {
+  from {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0deg) scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: translate(var(--target-x, 0), var(--target-y, 0)) rotate(var(--target-rotation, 0deg)) scale(1);
+  }
+}
+
+/* Premium Smooth UI Transitions */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Button Transitions */
+button {
+  transition: all 0.2s ease-in-out;
+}
+
+button:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease-in-out;
+}
+
+/* Modal Animations */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-backdrop {
+  animation: modalFadeIn 0.3s ease-in-out;
+}
+
+.modal-content {
+  animation: modalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Minimal preview modal animation: subtle fade + small upward slide */
+@keyframes previewModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.preview-modal {
+  animation: previewModalIn 0.25s ease-out;
+}
+
+/* Dropdown Animations */
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dropdown-menu {
+  animation: dropdownFadeIn 0.2s ease-in-out;
+}
+
+/* Card Hover Transitions */
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Page Transition */
+@keyframes pageFadeIn {
+  from {
+    opacity: 0.95; /* Start from slightly visible to prevent black flash */
+    transform: translateY(0); /* Remove vertical movement to prevent jerk */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pageFadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0.95; /* Never fully transparent to prevent black flash */
+    transform: translateY(0); /* Remove vertical movement to prevent jerk */
+  }
+}
+
+.page-transition {
+  animation: pageFadeIn 0.4s ease-in-out;
+}
+
+.page-transition-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  background: #FAFAFA !important; /* Force background to prevent black flash */
+  position: relative;
+  /* Prevent black flash by maintaining background */
+  will-change: opacity;
+  /* Ensure smooth rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.page-transition-wrapper.fade-out {
+  animation: pageFadeOut 0.4s ease-in-out forwards;
+  /* Keep background visible during fade */
+  background: #FAFAFA !important;
+  /* Prevent any black flash */
+  opacity: 1;
+}
+
+.page-transition-wrapper.fade-in {
+  animation: pageFadeIn 0.4s ease-in-out forwards;
+  /* Keep background visible during fade */
+  background: #FAFAFA !important;
+  /* Start from slightly visible to prevent black flash */
+  opacity: 0.95;
+}
+
+/* Body transition classes for page navigation */
+body.page-transitioning {
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+}
+
+body.page-loaded {
+  opacity: 1;
+  transition: opacity 0.4s ease-in-out;
+  animation: pageFadeIn 0.4s ease-in-out;
+}
+
+/* Smooth Scale on Click */
+.click-scale {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.click-scale:active {
+  transform: scale(0.96);
+}
+
+/* Smooth Fade Transitions */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-out {
+  animation: fadeOut 0.2s ease-in-out;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Subtle punctuation styling for premium hero typography */
+.punctuation {
+  font-size: 0.85em;
+  opacity: 0.75;
+  font-weight: 300;
+}
+
+/* Custom Scrollbar Styling - Auto-hide, minimalistic */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
+}
+
+*:hover {
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+/* For webkit browsers - auto-hide */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.2);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.4);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.6);
+}
+
+/* Ensure no horizontal scrollbars unless needed */
+body, html {
+  overflow-x: hidden;
+}
+
+/* Shared row layout for folder/file items */
+.row-item {
+  display: grid;
+  grid-template-columns: 1fr 110px;  /* Slightly narrower so the date sits a bit more to the left */
+  align-items: center;
+  padding: 12px 18px; /* slightly taller and wider for better readability */
+}
+
+.row-item .left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* a bit more space between icon and text */
+}
+
+.row-item .title-block {
+  min-width: 0;
+}
+
+.row-item .name {
+  font-size: 15px; /* slightly larger for better readability */
+  font-size: 14px; /* slightly larger for better readability */
+  font-weight: 500;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+ }
+
+ .row-item .location {
+  font-size: 11px; /* keep slightly smaller than name */
+  font-weight: 400;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+ }
+
+ .row-item .right {
+  text-align: right;
+  padding-right: 0; /* use margin instead of padding to shift away from the edge */
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 8px;
+ }
+
+ .row-item .date {
+  text-align: right;
+  font-size: 12px;
+  color: #8A8F99;       /* faded grey */
+  font-weight: 400;
+  white-space: nowrap;
+ }
+
+/* REMOVE ANY PREVIOUS OVERRIDES THAT AFFECT DATE POSITION */
+.row-item .right,
+.file-row .right,
+.folder-row .right,
+.locked-row .right,
+.favorite-row .right {
+  justify-content: flex-end !important;
+  margin-right: 80px !important; /* move the date further left from the extreme edge */
+  position: static !important;
 }
