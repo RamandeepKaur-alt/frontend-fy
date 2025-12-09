@@ -698,8 +698,10 @@ export default function FolderDetailPage() {
     setUploadingFolder(true);
     setError("");
     setUploadProgress({ current: 0, total: files.length });
+
 try {
-  // DOM File type to avoid conflict with backend File model
+  interface File extends globalThis.File {}
+
   type DOMFile = File & { webkitRelativePath?: string };
 
   // Map stores DOM files only
@@ -717,7 +719,8 @@ try {
 
        if (!fileMap.has(folderPath)) fileMap.set(folderPath, []);
 
-       fileMap.get(folderPath)!.push(file);
+       fileMap.get(folderPath)!.push(file as DOMFile);
+
 
      } else {
        if (!fileMap.has('')) fileMap.set('', []);
