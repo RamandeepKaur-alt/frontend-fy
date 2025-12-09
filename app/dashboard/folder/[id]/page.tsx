@@ -1,5 +1,13 @@
 "use client";
 
+type AnyFile = globalThis.File | {
+  id?: string;
+  url?: string;
+  mimetype?: string;
+  createdAt?: string;
+  folderId?: string;
+};
+
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { 
@@ -698,9 +706,10 @@ export default function FolderDetailPage() {
 
     try {
       // Organize files by their folder structure
-      const fileMap = new Map<string, any[]>();
+      const fileMap = new Map<string, AnyFile[]>();
       const folderPaths = new Set<string>();
 
+      // Here files always come from the browser FileList, so treat them as browser File
       files.forEach((file: globalThis.File) => {
         // Get the relative path from the folder structure
         const fullPath = (file as any).webkitRelativePath || file.name;
@@ -714,35 +723,13 @@ export default function FolderDetailPage() {
           if (!fileMap.has(folderPath)) {
             fileMap.set(folderPath, []);
           }
-          fileMap.get(folderPath)!.push({
-            id: "",
-            url: "",
-            mimetype: file.type,
-            createdAt: new Date(),
-            folderId: "",
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            lastModified: file.lastModified,
-            browserFile: file,
-          } as any);
+          fileMap.get(folderPath)!.push(file);
         } else {
           // File is in root of uploaded folder
           if (!fileMap.has('')) {
             fileMap.set('', []);
           }
-          fileMap.get('')!.push({
-            id: "",
-            url: "",
-            mimetype: file.type,
-            createdAt: new Date(),
-            folderId: "",
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            lastModified: file.lastModified,
-            browserFile: file,
-          } as any);
+          fileMap.get('')!.push(file);
         }
       });
 
@@ -803,10 +790,10 @@ export default function FolderDetailPage() {
           targetFolderId = folderIdMap.get(folderPath)!;
         }
 
-        for (const fileWrapper of folderFiles) {
-          const browserFile = (fileWrapper as any).browserFile as globalThis.File;
+        for (const file of folderFiles) {
           const formData = new FormData();
-          formData.append("file", browserFile);
+          // treat AnyFile as browser File for upload
+          formData.append("file", file as globalThis.File);
           if (targetFolderId) {
             formData.append("folderId", targetFolderId.toString());
           } else {
