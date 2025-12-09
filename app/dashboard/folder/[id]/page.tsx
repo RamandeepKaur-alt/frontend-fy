@@ -66,11 +66,6 @@ interface AppFile {
   folderId: number | null;
 }
 
-interface SearchableItem {
-  [key: string]: any; // index signature so Folder fits
-  name?: string;
-}
-
 const DEFAULT_CATEGORIES = ["Work", "Personal", "Documents", "Media", "Important"];
 
 export default function FolderDetailPage() {
@@ -703,10 +698,10 @@ export default function FolderDetailPage() {
 
     try {
       // Organize files by their folder structure (DOM File for uploads)
-      const fileMap: Map<string, globalThis.File[]> = new Map();
+      const fileMap: Map<string, (File & { webkitRelativePath?: string })[]> = new Map();
       const folderPaths = new Set<string>();
 
-      files.forEach((file: globalThis.File) => {
+      files.forEach((file: File & { webkitRelativePath?: string }) => {
         // Get the relative path from the folder structure
         const fileWithPath = file as globalThis.File & { webkitRelativePath?: string };
         const fullPath = fileWithPath.webkitRelativePath || file.name;
@@ -1806,22 +1801,35 @@ export default function FolderDetailPage() {
               <div className="flex flex-col gap-1">
                 {allItems.map((item) => {
                   if (item.type === "folder") {
-                    const folderColorHex = getColorHex(item.data.folderColor || "blue");
+                    const folderData = item.data as Folder;
+                    const folderColorHex = getColorHex(folderData.folderColor || "blue");
                     // Parent path only: category/root -> ... -> current folder
                     const basePathParts = [
-                      ...(currentFolder?.parentChain?.map((p) => p.name) || []),
+                      ...(currentFolder?.parentChain?.map((p: { id: number; name: string }) => p.name) || []),
                       currentFolder?.name,
                     ].filter(Boolean) as string[];
                     const locationText = basePathParts.join(" / ");
                     return (
                       <div key={`folder-${item.data.id}`} className="transition-colors hover:bg-gray-50/50">
                         <FolderListItem
-                          folder={item.data}
+                          folder={folderData}
                           folderColorHex={folderColorHex}
                           locationText={locationText}
                           onRename={handleRenameFolder}
                           onLock={handleLock}
-                          onUnlock={handleUnlock}
+                          onUnlock={async (id: number) => {
+                            const password = prompt("Enter password to unlock this folder:");
+                            if (password) {
+                              try {
+                                await handleUnlock(id, password);
+                                fetchFolder();
+                              } catch (err) {
+                                console.error("Failed to unlock folder:", err);
+                                setError("Failed to unlock folder. Incorrect password?");
+                                setTimeout(() => setError(""), 5000);
+                              }
+                            }
+                          }}
                           onToggleImportant={handleToggleImportant}
                           onDelete={handleDeleteFolder}
                           onClick={() => handleFolderClick(item.data.id)}
@@ -1832,10 +1840,11 @@ export default function FolderDetailPage() {
                       </div>
                     );
                   } else {
+                    const fileData = item.data as AppFile;
                     return (
                       <div key={`file-${item.data.id}`} className="transition-colors hover:bg-gray-50/50">
                         <FileListItem
-                          file={item.data}
+                          file={fileData}
                           onDelete={handleDeleteFile}
                           onDownload={handleDownloadFile}
                           onPreview={handlePreviewFile}
@@ -1901,6 +1910,7 @@ export default function FolderDetailPage() {
                           className="flex flex-col items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-200 rounded-md"
                           aria-label={color.name}
                           aria-pressed={isActive}
+                          title={`Select ${color.name} color`}
                         >
                           <span
                             className={`flex items-center justify-center transition-all duration-150 ${

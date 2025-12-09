@@ -39,6 +39,7 @@ import { getRecentItemIds, addRecentItem, addRecentItemAndNotify, getRecentItems
 import { buildFolderPath } from "../utils/folderPath";
 import { getEnabledCategories } from "../utils/categoryManagement";
 
+
 // (removed unused AnyFile to avoid linter/TS warnings)
 interface Folder {
   id: number;
