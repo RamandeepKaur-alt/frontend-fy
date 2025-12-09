@@ -39,6 +39,17 @@ import { getRecentItemIds, addRecentItem, addRecentItemAndNotify, getRecentItems
 import { buildFolderPath } from "../utils/folderPath";
 import { getEnabledCategories } from "../utils/categoryManagement";
 
+// FIX for Vercel TypeScript error
+type AnyFile = globalThis.File | {
+  id?: number;
+  name?: string;
+  url?: string;
+  mimetype?: string;
+  createdAt?: string;
+  folderId?: number | null;
+};
+
+
 interface Folder {
   id: number;
   name: string;
