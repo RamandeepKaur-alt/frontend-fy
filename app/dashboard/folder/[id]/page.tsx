@@ -36,6 +36,9 @@ import { addRecentItem, addRecentItemAndNotify } from "../../../utils/recentItem
 import ArcActionButton from "../../../components/ArcActionButton";
 import { BRAND_NAME } from "../../../config/brand";
 
+type DOMFile = globalThis.File & { webkitRelativePath?: string };
+
+
 interface Folder {
   id: number;
   name: string;
@@ -695,8 +698,7 @@ export default function FolderDetailPage() {
     setUploadingFolder(true);
     setError("");
     setUploadProgress({ current: 0, total: files.length });
-
-    try {
+try {
   // DOM File type to avoid conflict with backend File model
   type DOMFile = File & { webkitRelativePath?: string };
 
@@ -704,32 +706,24 @@ export default function FolderDetailPage() {
   const fileMap: Map<string, DOMFile[]> = new Map();
   const folderPaths = new Set<string>();
 
-  files.forEach((file: DOMFile) => {
-    // Get the relative path from the folder structure
-    const fullPath = file.webkitRelativePath || file.name;
-    const pathParts = fullPath.split('/');
+  files.forEach((f) => {
+     const file = f as DOMFile;
+     const fullPath = file.webkitRelativePath || file.name;
+     const pathParts = fullPath.split('/');
 
-    if (pathParts.length > 1) {
-      // File is in a subfolder
-      const folderPath = pathParts.slice(0, -1).join('/');
-      folderPaths.add(folderPath);
+     if (pathParts.length > 1) {
+       const folderPath = pathParts.slice(0, -1).join('/');
+       folderPaths.add(folderPath);
 
-      if (!fileMap.has(folderPath)) {
-        fileMap.set(folderPath, []);
-      }
+       if (!fileMap.has(folderPath)) fileMap.set(folderPath, []);
 
-      // ⬇ FIXED: Force TS to treat file as DOMFile
-      fileMap.get(folderPath)!.push(file as DOMFile);
+       fileMap.get(folderPath)!.push(file);
 
-    } else {
-      // File is in root of uploaded folder
-      if (!fileMap.has('')) {
-        fileMap.set('', []);
-      }
+     } else {
+       if (!fileMap.has('')) fileMap.set('', []);
 
-      // ⬇ FIXED: Force TS to treat file as DOMFile
-      fileMap.get('')!.push(file as DOMFile);
-    }
+       fileMap.get('')!.push(file as DOMFile);
+     }
   });
 
 
