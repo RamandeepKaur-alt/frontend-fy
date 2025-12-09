@@ -160,7 +160,7 @@ export function ClipboardProvider({ children, token }: { children: ReactNode; to
         onSuccess();
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("[Clipboard] Paste operation failed:", error);
       throw error; // Re-throw to allow component to handle error
     }

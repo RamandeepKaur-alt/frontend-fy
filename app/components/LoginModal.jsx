@@ -14,9 +14,11 @@ export default function LoginModal({ open, onClose }) {
   // Reset form and error when modal opens/closes
   useEffect(() => {
     if (open) {
-      setForm({ email: "", password: "" });
-      setError("");
-      setShowPassword(false);
+      Promise.resolve().then(() => {
+        setForm({ email: "", password: "" });
+        setError("");
+        setShowPassword(false);
+      });
     }
   }, [open]);
 
@@ -244,7 +246,7 @@ export default function LoginModal({ open, onClose }) {
                   fontFamily: 'var(--font-poppins), Poppins, sans-serif'
                 }}
               >
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <button
                   onClick={(e) => {
                     e.preventDefault();

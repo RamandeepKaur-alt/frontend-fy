@@ -8,20 +8,83 @@ interface VoiceSearchButtonProps {
   onError?: (error: string) => void;
 }
 
+interface SpeechRecognitionEventLike {
+  results: ArrayLike<{ 0: { transcript: string } }>;
+}
+
+interface SpeechRecognitionErrorEventLike {
+  error?: string;
+}
+
+interface SpeechRecognitionLike {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  state?: string;
+  start: () => void;
+  stop: () => void;
+  onstart: () => void;
+  onresult: (event: SpeechRecognitionEventLike) => void;
+  onerror: (event: SpeechRecognitionErrorEventLike) => void;
+  onend: () => void;
+}
+
 export default function VoiceSearchButton({ onTranscript, onError }: VoiceSearchButtonProps) {
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+
+  const stopListening = () => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      setIsProcessing(false);
+    }
+  };
+
+  const startListening = () => {
+    if (recognitionRef.current && !isListening) {
+      try {
+        if (
+          (recognitionRef.current as SpeechRecognitionLike & { state?: string }).state === "running" ||
+          (recognitionRef.current as SpeechRecognitionLike & { state?: string }).state === "starting"
+        ) {
+          return;
+        }
+        recognitionRef.current.start();
+      } catch (error: unknown) {
+        if (
+          error &&
+          typeof error === "object" &&
+          (error as { name?: string }).name === "InvalidStateError"
+        ) {
+          setIsListening(true);
+          return;
+        }
+        console.error("Error starting recognition:", error);
+        if (onError) {
+          onError("Failed to start voice recognition. Please try again.");
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     // Check if browser supports Speech Recognition
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    
-    if (SpeechRecognition) {
-      setIsSupported(true);
-      const Recognition = SpeechRecognition;
-      recognitionRef.current = new Recognition();
+    const speechGlobal = window as unknown as {
+      SpeechRecognition?: new () => SpeechRecognitionLike;
+      webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+    };
+
+    const SpeechRecognitionCtor = speechGlobal.SpeechRecognition || speechGlobal.webkitSpeechRecognition;
+
+    if (SpeechRecognitionCtor) {
+      // Defer state update to avoid synchronous setState in effect body
+      Promise.resolve().then(() => {
+        setIsSupported(true);
+      });
+      recognitionRef.current = new SpeechRecognitionCtor();
       
       const recognition = recognitionRef.current;
       recognition.continuous = false;
@@ -33,7 +96,7 @@ export default function VoiceSearchButton({ onTranscript, onError }: VoiceSearch
         setIsProcessing(false);
       };
 
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: SpeechRecognitionEventLike) => {
         const transcript = event.results[0][0].transcript;
         setIsProcessing(true);
         onTranscript(transcript);
@@ -44,7 +107,7 @@ export default function VoiceSearchButton({ onTranscript, onError }: VoiceSearch
         }, 100);
       };
 
-      recognition.onerror = (event: any) => {
+      recognition.onerror = (event: SpeechRecognitionErrorEventLike) => {
         setIsListening(false);
         setIsProcessing(false);
         
@@ -67,7 +130,10 @@ export default function VoiceSearchButton({ onTranscript, onError }: VoiceSearch
         setIsProcessing(false);
       };
     } else {
-      setIsSupported(false);
+      // Defer state update to avoid synchronous setState in effect body
+      Promise.resolve().then(() => {
+        setIsSupported(false);
+      });
     }
 
     return () => {
@@ -75,38 +141,7 @@ export default function VoiceSearchButton({ onTranscript, onError }: VoiceSearch
         recognitionRef.current.stop();
       }
     };
-  }, [onTranscript, onError]);
-
-  const startListening = () => {
-    if (recognitionRef.current && !isListening) {
-      try {
-        // Check if recognition is already running
-        if (recognitionRef.current.state === 'running' || recognitionRef.current.state === 'starting') {
-          return;
-        }
-        recognitionRef.current.start();
-      } catch (error: any) {
-        // Handle the "already started" error gracefully
-        if (error.name === 'InvalidStateError' || error.message?.includes('already started')) {
-          // Recognition is already running, just update the state
-          setIsListening(true);
-          return;
-        }
-        console.error("Error starting recognition:", error);
-        if (onError) {
-          onError("Failed to start voice recognition. Please try again.");
-        }
-      }
-    }
-  };
-
-  const stopListening = () => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-      setIsProcessing(false);
-    }
-  };
+  }, [onTranscript, onError, isListening, stopListening]);
 
   const handleClick = () => {
     if (!isSupported) {

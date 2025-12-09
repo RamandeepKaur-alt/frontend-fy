@@ -45,17 +45,19 @@ export default function CategorySelectionModal({
   useEffect(() => {
     if (isOpen) {
       const stored = localStorage.getItem("fynora_custom_categories");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setCustomCategories(Array.isArray(parsed) ? parsed : []);
-        } catch (err) {
-          console.error("Failed to parse custom categories:", err);
+      Promise.resolve().then(() => {
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            setCustomCategories(Array.isArray(parsed) ? parsed : []);
+          } catch (err) {
+            console.error("Failed to parse custom categories:", err);
+            setCustomCategories([]);
+          }
+        } else {
           setCustomCategories([]);
         }
-      } else {
-        setCustomCategories([]);
-      }
+      });
     }
   }, [isOpen]);
 

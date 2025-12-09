@@ -114,7 +114,7 @@ export function useClipboardActions() {
 
     try {
       await handlePaste(targetFolderId, onSuccess);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("[ClipboardActions] Paste failed:", error);
       throw error;
     }

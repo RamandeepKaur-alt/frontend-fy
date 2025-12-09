@@ -9,6 +9,10 @@ interface Folder {
   parentId: number | null;
 }
 
+interface NestedFolder extends Folder {
+  subfolders?: NestedFolder[];
+}
+
 interface MoveModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -48,8 +52,8 @@ export default function MoveModal({
   }, [isOpen, token]);
 
   // Helper function to flatten nested folders
-  const flattenFolders = (folders: any[], result: Folder[] = []): Folder[] => {
-    folders.forEach((folder: any) => {
+  const flattenFolders = (folders: NestedFolder[], result: Folder[] = []): Folder[] => {
+    folders.forEach((folder) => {
       result.push({
         id: folder.id,
         name: folder.name,

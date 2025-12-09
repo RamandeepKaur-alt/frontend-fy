@@ -25,18 +25,6 @@ export default function ArcActionButton({
   onFavorites,
 }: ArcActionButtonProps) {
   const pathname = usePathname();
-
-  // Hide thunder actions on specific sections only
-  const shouldHide = pathname && (
-    pathname.startsWith("/dashboard/locked") ||
-    pathname.startsWith("/dashboard/important") ||
-    pathname.startsWith("/dashboard/magic-lens")
-  );
-
-  if (shouldHide) {
-    return null;
-  }
-
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -125,6 +113,17 @@ export default function ArcActionButton({
     action();
     setIsOpen(false);
   };
+
+  // Hide thunder actions on specific sections only
+  const shouldHide = pathname && (
+    pathname.startsWith("/dashboard/locked") ||
+    pathname.startsWith("/dashboard/important") ||
+    pathname.startsWith("/dashboard/magic-lens")
+  );
+
+  if (shouldHide) {
+    return null;
+  }
 
   return (
     <>

@@ -29,13 +29,10 @@ export default function ClipboardProviderWrapper({
 }: { 
   children: React.ReactNode 
 }) {
-  const [token, setToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Get token from localStorage on client side
-    const storedToken = localStorage.getItem("token");
-    setToken(storedToken);
-  }, []);
+  const [token] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("token");
+  });
 
   return (
     <ToastProvider>

@@ -183,8 +183,9 @@ export default function FolderListItem({
       setShowUnlockModal(false);
       setUnlockPassword("");
       setShowContextMenu(false);
-    } catch (err: any) {
-      setError(err.message || "Failed to unlock folder");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to unlock folder";
+      setError(message);
     } finally {
       setLoading(false);
     }

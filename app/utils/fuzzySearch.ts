@@ -2,7 +2,8 @@ import Fuse from "fuse.js";
 
 export interface SearchableItem {
   name: string;
-  [key: string]: any;
+  parentId?: number | null;
+  [key: string]: unknown;
 }
 
 /**
@@ -104,7 +105,7 @@ function getFuseOptions(query: string) {
     findAllMatches: true,
     shouldSort: true,
     // Weight exact matches more heavily
-    getFn: (obj: SearchableItem, path: string) => {
+    getFn: (obj: SearchableItem, _path: string) => {
       return obj.name;
     },
   };
@@ -223,7 +224,7 @@ export function fuzzySearchFolders<T extends SearchableItem>(
 ): T[] {
   // First filter by parentId
   const filteredByParent = items.filter(
-    (item) => (item as any).parentId === parentId
+    (item) => (item.parentId ?? null) === parentId
   );
 
   // Then apply fuzzy search

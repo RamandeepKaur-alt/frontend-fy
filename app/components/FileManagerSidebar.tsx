@@ -62,7 +62,10 @@ export default function FileManagerSidebar({ showUploadInsteadOfNew = false }: F
   };
 
   useEffect(() => {
-    loadCategories();
+    // Defer to a microtask to avoid synchronous setState in effect body
+    Promise.resolve().then(() => {
+      loadCategories();
+    });
   }, []);
 
   // Listen for category updates
@@ -98,19 +101,21 @@ export default function FileManagerSidebar({ showUploadInsteadOfNew = false }: F
 
   // Detect active category from URL
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const category = urlParams.get('category');
-    if (category) {
-      setActiveCategory(category);
-    } else {
-      // If no category in URL, check if current folder name matches a category
-      const pathParts = pathname.split('/');
-      if (pathParts.length > 0 && pathParts[pathParts.length - 1] !== 'dashboard') {
-        // We're in a folder, but we can't determine category from path alone
-        // The category should be set via URL parameter when navigating
-        setActiveCategory(null);
+    Promise.resolve().then(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const category = urlParams.get('category');
+      if (category) {
+        setActiveCategory(category);
+      } else {
+        // If no category in URL, check if current folder name matches a category
+        const pathParts = pathname.split('/');
+        if (pathParts.length > 0 && pathParts[pathParts.length - 1] !== 'dashboard') {
+          // We're in a folder, but we can't determine category from path alone
+          // The category should be set via URL parameter when navigating
+          setActiveCategory(null);
+        }
       }
-    }
+    });
   }, [pathname]);
 
   const handleNew = () => {

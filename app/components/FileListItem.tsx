@@ -18,19 +18,21 @@ import { detectFileType, formatFileSize } from "../utils/fileTypeDetection";
 import { useToast } from "../contexts/ToastContext";
 import RowItem from "./RowItem";
 
+interface FileMeta {
+  id: number;
+  name: string;
+  url: string;
+  size: number;
+  mimetype: string;
+  createdAt: string;
+  folderId?: number | null;
+}
+
 interface FileListItemProps {
-  file: {
-    id: number;
-    name: string;
-    url: string;
-    size: number;
-    mimetype: string;
-    createdAt: string;
-    folderId?: number | null;
-  };
+  file: FileMeta;
   onDelete?: (id: number) => Promise<void>;
-  onPreview?: (file: any) => void;
-  onDownload?: (file: any) => void;
+  onPreview?: (file: FileMeta) => void;
+  onDownload?: (file: FileMeta) => void;
   onLock?: (id: number) => Promise<void>;
   isSelected?: boolean;
   onSelect?: (id: number, selected: boolean) => void;
@@ -194,9 +196,10 @@ export default function FileListItem({
         const errorData = await folderRes.json().catch(() => ({}));
         throw new Error(errorData.error || "Failed to lock file");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to lock file:", err);
-      showError(err.message || "Failed to lock file. Please try again.");
+      const message = err instanceof Error ? err.message : "Failed to lock file. Please try again.";
+      showError(message);
     }
   };
 

@@ -242,9 +242,10 @@ export default function ImportantFoldersPage() {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to rename folder");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to rename folder:", err);
-      showError(err.message || "Failed to rename folder");
+      const message = err instanceof Error ? err.message : "Failed to rename folder";
+      showError(message);
       throw err;
     }
   };
@@ -279,7 +280,7 @@ export default function ImportantFoldersPage() {
       } else {
         throw new Error("Failed to toggle important");
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to toggle important:", err);
       throw err;
     }
@@ -308,7 +309,7 @@ export default function ImportantFoldersPage() {
       } else {
         throw new Error("Failed to delete folder");
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to delete folder:", err);
       showError("Failed to delete folder");
     }
@@ -357,8 +358,9 @@ export default function ImportantFoldersPage() {
         showSuccess("Share link copied to clipboard!");
       }
       setSelectedFolderIds(new Set());
-    } catch (err: any) {
-      showError(err.message || "Failed to share folders");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to share folders";
+      showError(message);
     } finally {
       setLoading(false);
     }
@@ -377,8 +379,9 @@ export default function ImportantFoldersPage() {
       setFolders(prev => prev.filter(f => !selectedFolderIds.has(f.id)));
       setSelectedFolderIds(new Set());
       showSuccess("Folders deleted successfully");
-    } catch (err: any) {
-      showError(err.message || "Failed to delete folders");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to delete folders";
+      showError(message);
     } finally {
       setLoading(false);
     }
@@ -555,8 +558,9 @@ export default function ImportantFoldersPage() {
               setSelectedFolderIds(new Set());
               showSuccess("Items pasted successfully");
               await fetchImportantFolders();
-            } catch (err: any) {
-              showError(err.message || "Failed to paste items");
+            } catch (err: unknown) {
+              const message = err instanceof Error ? err.message : "Failed to paste items";
+              showError(message);
             } finally {
               setLoading(false);
             }

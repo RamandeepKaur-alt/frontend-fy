@@ -11,7 +11,10 @@ export function useLeaveConfirmation({ leaveTo }: UseLeaveConfirmationOptions) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const leavePathRef = useRef(leaveTo);
-  leavePathRef.current = leaveTo;
+  
+  useEffect(() => {
+    leavePathRef.current = leaveTo;
+  }, [leaveTo]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

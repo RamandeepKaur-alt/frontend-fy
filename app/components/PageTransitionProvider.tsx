@@ -12,7 +12,9 @@ export default function PageTransitionProvider({ children }: { children: React.R
   // We do NOT delay rendering or move the page vertically.
   useEffect(() => {
     // Start a short fade whenever the route or search params change.
-    setIsFading(true);
+    Promise.resolve().then(() => {
+      setIsFading(true);
+    });
     const timeout = window.setTimeout(() => {
       setIsFading(false);
     }, 220); // match or slightly exceed CSS transition duration

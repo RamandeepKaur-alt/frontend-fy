@@ -1,12 +1,5 @@
 "use client";
 
-interface UploadFile {
-  name: string;
-  size: number;
-  type: string;
-  lastModified: number;
-}
-
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { 
@@ -52,7 +45,7 @@ interface Folder {
   isLocked?: boolean;
   isImportant?: boolean;
   subfolders?: Folder[];
-  files?: File[];
+  files?: AppFile[];
   parent?: {
     id: number;
     name: string;
@@ -87,7 +80,7 @@ export default function FolderDetailPage() {
   const [token, setToken] = useState<string | null>(null);
   const [currentFolder, setCurrentFolder] = useState<Folder | null>(null);
   const [subfolders, setSubfolders] = useState<Folder[]>([]);
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<AppFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showCreateSubfolderModal, setShowCreateSubfolderModal] = useState(false);
@@ -99,7 +92,7 @@ export default function FolderDetailPage() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [voiceError, setVoiceError] = useState("");
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<AppFile | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -473,7 +466,7 @@ export default function FolderDetailPage() {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to lock folder");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to lock folder:", err);
       throw err;
     }
@@ -501,7 +494,7 @@ export default function FolderDetailPage() {
         const errorData = await res.json();
         throw new Error(errorData.error || "Incorrect password");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to unlock folder:", err);
       throw err;
     }
@@ -704,13 +697,14 @@ export default function FolderDetailPage() {
     setUploadProgress({ current: 0, total: files.length });
 
     try {
-      // Organize files by their folder structure (UploadFile is the browser File type)
-      const fileMap: Map<string, UploadFile[]> = new Map();
+      // Organize files by their folder structure (DOM File for uploads)
+      const fileMap: Map<string, globalThis.File[]> = new Map();
       const folderPaths = new Set<string>();
 
-      files.forEach((file: UploadFile) => {
+      files.forEach((file: globalThis.File) => {
         // Get the relative path from the folder structure
-        const fullPath = (file as any).webkitRelativePath || file.name;
+        const fileWithPath = file as globalThis.File & { webkitRelativePath?: string };
+        const fullPath = fileWithPath.webkitRelativePath || file.name;
         const pathParts = fullPath.split('/');
         
         if (pathParts.length > 1) {
@@ -1194,9 +1188,10 @@ export default function FolderDetailPage() {
       // Refresh data
       fetchFolder();
       handleDeselectAll();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to move items:", err);
-      setError(err.message || "Failed to move some items. Please try again.");
+      const message = err instanceof Error ? err.message : "Failed to move some items. Please try again.";
+      setError(message);
       throw err;
     }
   };
@@ -1228,8 +1223,12 @@ export default function FolderDetailPage() {
   const filteredSubfolders = fuzzySearch(subfolders, debouncedSearchQuery);
   const filteredFiles = fuzzySearch(files, debouncedSearchQuery);
 
+  type ItemEntry =
+    | { type: 'folder'; data: Folder }
+    | { type: 'file'; data: AppFile };
+
   // Sort function
-  const sortItems = (items: Array<{ type: 'folder' | 'file', data: any }>) => {
+  const sortItems = (items: ItemEntry[]) => {
     return [...items].sort((a, b) => {
       let comparison = 0;
       
@@ -1250,7 +1249,7 @@ export default function FolderDetailPage() {
   };
 
   // Combine folders and files, sorted by type (folders first, then files)
-  const unsortedItems = [
+  const unsortedItems: ItemEntry[] = [
     ...filteredSubfolders.map(f => ({ type: "folder" as const, data: f })),
     ...filteredFiles.map(f => ({ type: "file" as const, data: f }))
   ];
@@ -1552,9 +1551,10 @@ export default function FolderDetailPage() {
                   }
                   
                   setLoading(false);
-                } catch (err: any) {
+                } catch (err: unknown) {
                   console.error("Failed to paste:", err);
-                  setError(err.message || "Failed to paste items. Please try again.");
+                  const message = err instanceof Error ? err.message : "Failed to paste items. Please try again.";
+                  setError(message);
                   setLoading(false);
                   setTimeout(() => setError(""), 5000);
                 }
@@ -1585,8 +1585,9 @@ export default function FolderDetailPage() {
                       await handleRenameFolder(selectedId, newName.trim());
                       setLoading(false);
                       handleDeselectAll();
-                    } catch (err: any) {
-                      setError(err.message || "Failed to rename folder. Please try again.");
+                    } catch (err: unknown) {
+                      const message = err instanceof Error ? err.message : "Failed to rename folder. Please try again.";
+                      setError(message);
                       setLoading(false);
                       setTimeout(() => setError(""), 5000);
                     }

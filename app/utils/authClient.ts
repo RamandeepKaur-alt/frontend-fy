@@ -63,7 +63,7 @@ export async function signupAndOnboard(payload: SignupPayload): Promise<AuthResu
     }
 
     return { ok: true, user: data.user, token: data.token };
-  } catch (err: any) {
+  } catch (_err: unknown) {
     return { ok: false, error: "Network error" };
   }
 }
@@ -98,7 +98,7 @@ export async function loginAndBootstrap(payload: LoginPayload): Promise<AuthResu
     }
 
     return { ok: true, user: data.user, token: data.token };
-  } catch (err: any) {
+  } catch (_err: unknown) {
     return {
       ok: false,
       error: "Network error. Please check if the backend server is running.",

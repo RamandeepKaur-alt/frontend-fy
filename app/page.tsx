@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import { useEffect, useState } from "react";
 import { ArrowRight, Sparkles, Mic, Lock } from "lucide-react";
@@ -34,13 +34,6 @@ export default function Home() {
       observer.disconnect();
     };
   }, []);
-
-  const scrollToSection = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#111827] to-[#0F172A] text-white">
@@ -274,7 +267,7 @@ export default function Home() {
             </div>
 
             <p className="text-lg font-medium">
-              We're building the future of file management—where technology works for you, not against you.
+              We&apos;re building the future of file management—where technology works for you, not against you.
             </p>
           </div>
         </div>

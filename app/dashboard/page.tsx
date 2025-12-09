@@ -856,18 +856,17 @@ export default function DashboardPage() {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({}),
       });
 
       if (res.ok) {
-        const data = await res.json();
+        await res.json();
         // Remove folder from main list (it will appear in locked folders)
         setFolders(prev => prev.filter(f => f.id !== id));
       } else {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to lock folder");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to lock folder:", err);
       throw err;
     }
@@ -893,14 +892,14 @@ export default function DashboardPage() {
       });
 
       if (res.ok) {
-        const data = await res.json();
+        await res.json();
         // Fetch folders again to get the unlocked folder back in the list
         fetchFolders();
       } else {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to unlock folder");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to unlock folder:", err);
       throw err;
     }
@@ -926,7 +925,7 @@ export default function DashboardPage() {
       } else {
         throw new Error("Failed to toggle important");
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to toggle important:", err);
       throw err;
     }
@@ -951,7 +950,7 @@ export default function DashboardPage() {
       } else {
         throw new Error("Failed to delete folder");
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to delete folder:", err);
       throw err;
     }
@@ -1483,9 +1482,10 @@ export default function DashboardPage() {
       await fetchFiles();
       await fetchAllFolders(); // Refresh Recent section
       handleDeselectAll();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to move items:", err);
-      setError(err.message || "Failed to move some items. Please try again.");
+      const message = err instanceof Error ? err.message : "Failed to move some items. Please try again.";
+      setError(message);
       throw err;
     }
   };
@@ -1663,8 +1663,9 @@ export default function DashboardPage() {
                     setLoading(false);
                     // Deselect after rename
                     handleDeselectAll();
-                  } catch (err: any) {
-                    setError(err.message || "Failed to rename folder. Please try again.");
+                  } catch (err: unknown) {
+                    const message = err instanceof Error ? err.message : "Failed to rename folder. Please try again.";
+                    setError(message);
                     setLoading(false);
                     setTimeout(() => setError(""), 5000);
                   }
@@ -1694,9 +1695,10 @@ export default function DashboardPage() {
                 }
                 
                 setLoading(false);
-              } catch (err: any) {
+              } catch (err: unknown) {
                 console.error("Failed to share:", err);
-                showError(err.message || "Failed to share items. Please try again.");
+                const message = err instanceof Error ? err.message : "Failed to share items. Please try again.";
+                showError(message);
                 setLoading(false);
               }
             }}
@@ -1721,9 +1723,10 @@ export default function DashboardPage() {
                 handleDeselectAll();
                 
                 setLoading(false);
-              } catch (err: any) {
+              } catch (err: unknown) {
                 console.error("Failed to delete:", err);
-                setError(err.message || "Failed to delete items. Please try again.");
+                const message = err instanceof Error ? err.message : "Failed to delete items. Please try again.";
+                setError(message);
                 setLoading(false);
                 setTimeout(() => setError(""), 5000);
               }

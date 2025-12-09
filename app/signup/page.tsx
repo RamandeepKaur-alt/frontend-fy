@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, ChangeEvent, FormEvent, MouseEvent } from "react";
+import Link from "next/link";
 import { ArrowRight, FolderOpen } from "lucide-react";
 import LoginModal from "../components/LoginModal";
 import { signupAndOnboard } from "../utils/authClient";
 
 export default function SignupPage() {
-  const router = useRouter();
   const [isLoginOpen, setLoginOpen] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -31,12 +30,13 @@ export default function SignupPage() {
   }, [error]);
 
   // Handle Input
-  const handleChange = (e: any) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   // Handle Submit
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -81,7 +81,7 @@ export default function SignupPage() {
         }}
       >
         <div className="flex items-center">
-          <a 
+          <Link 
             href="/"
             className="inline-flex items-center gap-2.5 group"
           >
@@ -100,7 +100,7 @@ export default function SignupPage() {
             >
               <span style={{ fontSize: '1.15em' }}>F</span>ynora
             </h1>
-          </a>
+          </Link>
         </div>
       </div>
 
@@ -319,18 +319,22 @@ export default function SignupPage() {
               transform: 'translateY(12px)'
             }}
           >
-            <a
+            <Link
               href="/"
               className="text-xs transition-colors duration-200 inline-flex items-center gap-1"
               style={{
                 color: '#94A3B8',
                 fontFamily: 'var(--font-poppins), Poppins, sans-serif'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#64748B'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#94A3B8'}
+              onMouseEnter={(e: MouseEvent<HTMLAnchorElement>) => {
+                e.currentTarget.style.color = '#64748B';
+              }}
+              onMouseLeave={(e: MouseEvent<HTMLAnchorElement>) => {
+                e.currentTarget.style.color = '#94A3B8';
+              }}
             >
               ← Back to home
-            </a>
+            </Link>
           </div>
         </div>
       </div>

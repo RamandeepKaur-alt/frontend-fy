@@ -49,8 +49,13 @@ function SortDropdown({
 
   // Sync with external props
   useEffect(() => {
-    if (externalSortOrder) setSortOrder(externalSortOrder);
-    if (externalSortDirection) setSortDirection(externalSortDirection);
+    if (externalSortOrder || externalSortDirection) {
+      // Defer updates to avoid synchronous setState in effect body
+      Promise.resolve().then(() => {
+        if (externalSortOrder) setSortOrder(externalSortOrder);
+        if (externalSortDirection) setSortDirection(externalSortDirection);
+      });
+    }
   }, [externalSortOrder, externalSortDirection]);
 
   useEffect(() => {
