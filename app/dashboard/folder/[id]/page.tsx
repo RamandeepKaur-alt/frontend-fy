@@ -1,12 +1,7 @@
 "use client";
 
-type AnyFile = globalThis.File | {
-  id?: string;
-  url?: string;
-  mimetype?: string;
-  createdAt?: string;
-  folderId?: string;
-};
+// Browser upload file type (kept separate from DB File model)
+type UploadFile = globalThis.File;
 
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
@@ -705,12 +700,11 @@ export default function FolderDetailPage() {
     setUploadProgress({ current: 0, total: files.length });
 
     try {
-      // Organize files by their folder structure
-      const fileMap = new Map<string, AnyFile[]>();
+      // Organize files by their folder structure (UploadFile is the browser File type)
+      const fileMap = new Map<string, UploadFile[]>();
       const folderPaths = new Set<string>();
 
-      // Here files always come from the browser FileList, so treat them as browser File
-      files.forEach((file: globalThis.File) => {
+      files.forEach((file: UploadFile) => {
         // Get the relative path from the folder structure
         const fullPath = (file as any).webkitRelativePath || file.name;
         const pathParts = fullPath.split('/');
@@ -792,8 +786,7 @@ export default function FolderDetailPage() {
 
         for (const file of folderFiles) {
           const formData = new FormData();
-          // treat AnyFile as browser File for upload
-          formData.append("file", file as globalThis.File);
+          formData.append("file", file);
           if (targetFolderId) {
             formData.append("folderId", targetFolderId.toString());
           } else {
