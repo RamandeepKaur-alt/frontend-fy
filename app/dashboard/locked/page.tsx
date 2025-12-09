@@ -24,13 +24,13 @@ import FileManagerSidebar from "../../components/FileManagerSidebar";
 import ProfileDropdown from "../../components/ProfileDropdown";
 import LeaveConfirmModal from "../../components/LeaveConfirmModal";
 import { useLeaveConfirmation } from "../../hooks/useLeaveConfirmation";
-import { fuzzySearch } from "../../utils/fuzzySearch";
+import { fuzzySearch, SearchableItem } from "../../utils/fuzzySearch";
 import { useClipboard } from "../../contexts/ClipboardContext";
 import { useClipboardActions } from "../../hooks/useClipboardActions";
 import { useToast } from "../../contexts/ToastContext";
 import { BRAND_NAME } from "../../config/brand";
 
-interface Folder {
+interface Folder extends SearchableItem {
   id: number;
   name: string;
   createdAt: string;
@@ -271,10 +271,14 @@ export default function LockedFoldersPage() {
       }
     };
 
-    window.addEventListener('sidebar-category-clicked', handleCategoryClick as EventListener);
+    const wrappedHandler = (e: Event) => {
+      handleCategoryClick(e as CustomEvent<{ category: string }>);
+    };
+
+    window.addEventListener('sidebar-category-clicked', wrappedHandler);
 
     return () => {
-      window.removeEventListener('sidebar-category-clicked', handleCategoryClick as EventListener);
+      window.removeEventListener('sidebar-category-clicked', wrappedHandler);
     };
   }, [token, router, showError]);
 

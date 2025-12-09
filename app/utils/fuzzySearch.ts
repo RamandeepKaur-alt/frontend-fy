@@ -91,7 +91,7 @@ function calculateWordSimilarity(query: string, itemName: string): number {
  * Fuzzy search configuration optimized for folder names
  * Prioritizes exact matches and handles typos/misspellings
  */
-function getFuseOptions(query: string) {
+function getFuseOptions<T extends SearchableItem>(query: string) {
   const queryWords = query.trim().split(/\s+/).filter(w => w.length > 0);
   const isMultiWord = queryWords.length > 1;
   
@@ -105,7 +105,7 @@ function getFuseOptions(query: string) {
     findAllMatches: true,
     shouldSort: true,
     // Weight exact matches more heavily
-    getFn: (obj: SearchableItem, _path: string) => {
+    getFn: (obj: T, _path: string | string[]) => {
       return obj.name;
     },
   };
@@ -150,8 +150,8 @@ export function fuzzySearch<T extends SearchableItem>(
   }
 
   // Create Fuse instance with query-specific options
-  const fuseOptions = getFuseOptions(trimmedQuery);
-  const fuse = new Fuse(candidateItems, fuseOptions);
+  const fuseOptions = getFuseOptions<T>(trimmedQuery);
+  const fuse = new Fuse<T>(candidateItems, fuseOptions);
 
   // Perform search
   const results = fuse.search(trimmedQuery);

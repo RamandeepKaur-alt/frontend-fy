@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import ClipboardProviderWrapper from "./components/ClipboardProviderWrapper";
 import PageTransitionProvider from "./components/PageTransitionProvider";
@@ -38,9 +39,11 @@ export default function RootLayout({
         <FontLoader />
         <FontAwesomeLoader />
         <ClipboardProviderWrapper>
-          <PageTransitionProvider>
-            {children}
-          </PageTransitionProvider>
+          <Suspense fallback={null}>
+            <PageTransitionProvider>
+              {children}
+            </PageTransitionProvider>
+          </Suspense>
         </ClipboardProviderWrapper>
       </body>
     </html>

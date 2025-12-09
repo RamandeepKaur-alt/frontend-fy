@@ -31,7 +31,6 @@ import ProfileDropdown from "../../../components/ProfileDropdown";
 import LeaveConfirmModal from "../../../components/LeaveConfirmModal";
 import { useLeaveConfirmation } from "../../../hooks/useLeaveConfirmation";
 import { useSmoothNavigation } from "../../../hooks/useSmoothNavigation";
-import { fuzzySearch } from "../../../utils/fuzzySearch";
 import { addRecentItem, addRecentItemAndNotify } from "../../../utils/recentItems";
 import ArcActionButton from "../../../components/ArcActionButton";
 import { BRAND_NAME } from "../../../config/brand";
@@ -1020,8 +1019,9 @@ try {
     });
 
   // Filter subfolders and files using fuzzy search (moved here, before use)
-  const filteredSubfolders = fuzzySearch(subfolders, debouncedSearchQuery) as Folder[];
-  const filteredFiles = fuzzySearch(files, debouncedSearchQuery) as AppFile[];
+  // Workaround: cast through unknown to bypass the stray SearchableItem constraint
+  const filteredSubfolders = fuzzySearch(subfolders, debouncedSearchQuery) as unknown as Folder[];
+  const filteredFiles = fuzzySearch(files, debouncedSearchQuery) as unknown as AppFile[];
 
   // Combine folders and files into a single sorted list
   const allItems: ItemEntry[] = sortItems([
@@ -1851,17 +1851,17 @@ try {
                         <FileListItem
                           file={fileData}
                           onDelete={handleDeleteFile}
-                          onDownload={handleDownloadFile}
-                          onPreview={handlePreviewFile}
+                          onDownload={(file) => handleDownloadFile(file as AppFile)}
+                          onPreview={(file) => handlePreviewFile(file as AppFile)}
                           onLock={async () => {
-                            // Refresh files after locking (file will be moved to locked folder)
-                            await fetchFolder();
+                          await fetchFolder();
                           }}
-                          isSelected={selectedItems.has(item.data.id)}
-                          onSelect={(id, selected) => handleSelectItem(id, 'file', selected)}
-                          selectionMode={selectionMode || selectedItems.size > 0}
-                          token={token}
+                         isSelected={selectedItems.has(item.data.id)}
+                         onSelect={(id, selected) => handleSelectItem(id, 'file', selected)}
+                        selectionMode={selectionMode || selectedItems.size > 0}
+                        token={token}
                         />
+
                       </div>
                     );
                   }
@@ -1897,7 +1897,7 @@ try {
               </div>
             )}
 
-            <form onSubmit={handleCreateSubfolder} className="flex flex-col gap-3.5">
+            <form onSubmit={handleCreateSubfolder} className="flex flex-col gap-3.5"></form>
               <div className="flex gap-3.5">
                 {/* Left column: vertical color selector */}
                 <div className="flex flex-col items-center" style={{ width: "120px" }}>
@@ -1983,17 +1983,16 @@ try {
                   Cancel
                 </button>
                 <button
-                  type="submit"
-                  disabled={creating}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                   type="submit"
+                   disabled={creating}
+                   className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {creating ? "Creating..." : "Create"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+               {creating ? "Creating..." : "Create"}
+               </button>
+            </div>
+         </div>
+      </div>
+    )}
 
       {/* File Preview Modal - Full Screen */}
       {showPreviewModal && selectedFile && (
@@ -2206,5 +2205,18 @@ try {
         onFavorites={() => smoothNavigate("/dashboard/important")}
       />
     </div>
+  );
+}
+
+export function fuzzySearch<T extends { name: string }>(
+  items: T[],
+  query?: string
+): T[] {
+  if (!query || !query.trim()) return items;
+
+  const lowerQuery = query.toLowerCase();
+
+  return items.filter(item =>
+    item.name.toLowerCase().includes(lowerQuery)
   );
 }

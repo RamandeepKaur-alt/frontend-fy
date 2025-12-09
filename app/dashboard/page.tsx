@@ -30,7 +30,7 @@ import ArcActionButton from "../components/ArcActionButton";
 import LeaveConfirmModal from "../components/LeaveConfirmModal";
 import { useLeaveConfirmation } from "../hooks/useLeaveConfirmation";
 import { BRAND_NAME } from "../config/brand";
-import { fuzzySearch } from "../utils/fuzzySearch";
+import { fuzzySearch, SearchableItem } from "../utils/fuzzySearch";
 import { useClipboard } from "../contexts/ClipboardContext";
 import { useClipboardActions } from "../hooks/useClipboardActions";
 import { useToast } from "../contexts/ToastContext";
@@ -39,9 +39,8 @@ import { getRecentItemIds, addRecentItem, addRecentItemAndNotify, getRecentItems
 import { buildFolderPath } from "../utils/folderPath";
 import { getEnabledCategories } from "../utils/categoryManagement";
 
-
 // (removed unused AnyFile to avoid linter/TS warnings)
-interface Folder {
+interface Folder extends SearchableItem {
   id: number;
   name: string;
   parentId: number | null;
@@ -52,14 +51,14 @@ interface Folder {
   parentChain?: Array<{ id: number; name: string }>;
 }
 
-interface AppFile {
+interface AppFile extends SearchableItem {
   id: number;
   name: string;
   url: string;
   size: number;
   mimetype: string;
   createdAt: string;
-  folderId: number | null;
+  folderId?: number | null;
 }
 
 // Profile Dropdown Component
@@ -1831,8 +1830,8 @@ export default function DashboardPage() {
                           <FileListItem
                             file={item.data}
                             onDelete={handleDeleteFile}
-                            onDownload={handleDownloadFile}
-                            onPreview={handlePreviewFile}
+                            onDownload={(file) => { void handleDownloadFile(file as AppFile); }}
+                            onPreview={(file) => { void handlePreviewFile(file as AppFile); }}
                             onLock={async () => {
                               await fetchFiles();
                             }}

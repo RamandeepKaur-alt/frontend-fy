@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { 
   Search, 
   User,
@@ -18,14 +18,14 @@ import FileManagerSidebar from "../../components/FileManagerSidebar";
 import ProfileDropdown from "../../components/ProfileDropdown";
 import LeaveConfirmModal from "../../components/LeaveConfirmModal";
 import { useLeaveConfirmation } from "../../hooks/useLeaveConfirmation";
-import { fuzzySearch } from "../../utils/fuzzySearch";
+import { fuzzySearch, SearchableItem } from "../../utils/fuzzySearch";
 import { BRAND_NAME } from "../../config/brand";
 import { useClipboard } from "../../contexts/ClipboardContext";
 import { useClipboardActions } from "../../hooks/useClipboardActions";
 import { useToast } from "../../contexts/ToastContext";
 import { useSmoothNavigation } from "../../hooks/useSmoothNavigation";
 
-interface Folder {
+interface Folder extends SearchableItem {
   id: number;
   name: string;
   parentId?: number | null;
@@ -182,12 +182,17 @@ export default function ImportantFoldersPage() {
       }
     };
 
-    window.addEventListener('sidebar-category-clicked', handleCategoryClick as EventListener);
+    const wrappedHandler = (e: Event) => {
+      handleCategoryClick(e as CustomEvent<{ category: string }>);
+    };
+
+    window.addEventListener("sidebar-category-clicked", wrappedHandler);
 
     return () => {
-      window.removeEventListener('sidebar-category-clicked', handleCategoryClick as EventListener);
+      window.removeEventListener("sidebar-category-clicked", wrappedHandler);
     };
   }, [token, smoothNavigate, showError]);
+
 
   const fetchImportantFolders = async () => {
     if (!token) return;
@@ -393,10 +398,11 @@ export default function ImportantFoldersPage() {
 
   // Filter folders based on search query
   const filteredFolders = debouncedSearchQuery
-    ? folders.filter(folder => fuzzySearch(debouncedSearchQuery, folder.name))
+    ? fuzzySearch<Folder>(folders, debouncedSearchQuery)
     : folders;
 
   return (
+    <Suspense fallback={null}>
     <div className="min-h-screen flex flex-col page-transition" style={{ backgroundColor: '#FAFAFA' }}>
       <LeaveConfirmModal open={leaveOpen} onStay={onStay} onLeave={onLeave} />
       {/* Modern Navbar - Matching Dashboard */}
@@ -553,7 +559,7 @@ export default function ImportantFoldersPage() {
           onMove={async (destinationFolderId) => {
             try {
               setLoading(true);
-              await pasteItems(destinationFolderId, token);
+              await pasteItems(destinationFolderId);
               setShowPasteModal(false);
               setSelectedFolderIds(new Set());
               showSuccess("Items pasted successfully");
@@ -573,5 +579,6 @@ export default function ImportantFoldersPage() {
         />
       )}
     </div>
+    </Suspense>
   );
 }
