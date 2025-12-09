@@ -271,10 +271,10 @@ export default function FolderDetailPage() {
       }
     };
 
-    window.addEventListener('sidebar-category-clicked', handleCategoryClick as EventListener);
+    window.addEventListener('sidebar-category-clicked', handleCategoryClick as unknown as EventListener);
 
     return () => {
-      window.removeEventListener('sidebar-category-clicked', handleCategoryClick as EventListener);
+      window.removeEventListener('sidebar-category-clicked', handleCategoryClick as unknown as EventListener);
     };
   }, [token, smoothNavigate]);
 
