@@ -151,7 +151,7 @@ export default function FileListItem({
       const folderName = file.name.replace(/\.[^/.]+$/, "") || "Locked Files";
       
       // Create a locked folder
-      const folderRes = await fetch("${API_BASE}/api/folders/create", {
+      const folderRes = await fetch(`${API_BASE}/api/folders/create`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,

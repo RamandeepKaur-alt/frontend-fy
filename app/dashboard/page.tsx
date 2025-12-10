@@ -379,48 +379,35 @@ export default function DashboardPage() {
     }
   }, [token]);
 
-  // Fetch all recent files (by ID) for Recent section so uploads in any folder appear
+  // Fetch recent files from backend so uploads/modifications from any folder appear (Google Drive-style)
   const fetchRecentFiles = useCallback(async () => {
     if (!token) return;
 
     try {
-      const recentIds = getRecentItemIds();
-      const fileIds = Array.from(recentIds.files);
-
-      if (fileIds.length === 0) {
-        setRecentFilesData([]);
-        return;
-      }
-
-      const filePromises = fileIds.map(async (fileId) => {
-        try {
-          const res = await fetch(`${API_BASE}/api/files/${fileId}`, {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            return data.file as AppFile;
-          }
-
-          return null;
-        } catch (err) {
-          console.error(`Failed to fetch file ${fileId}:`, err);
-          return null;
-        }
+      const res = await fetch(`${API_BASE}/api/files/recent`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
-      const fetchedFiles = await Promise.all(filePromises);
-      const validFiles = fetchedFiles.filter((f): f is AppFile => f !== null);
-      setRecentFilesData(validFiles);
+      if (res.ok) {
+        const data = await res.json();
+        setRecentFilesData((data.files || []) as AppFile[]);
+      } else if (res.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        sessionStorage.removeItem("locked_folders_authenticated");
+        router.push("/login");
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Failed to fetch recent files:", res.status, errorData);
+      }
     } catch (err) {
       console.error("Failed to fetch recent files:", err);
     }
-  }, [token]);
+  }, [token, router]);
 
   useEffect(() => {
     if (token) {
@@ -447,12 +434,13 @@ export default function DashboardPage() {
     }
   }, [token, fetchAllFolders]);
 
-  // Refresh all folders when recent items change
+  // Refresh all folders and recent files when recent items change
   useEffect(() => {
     if (!token) return;
     
     const checkRecentItems = () => {
       fetchAllFolders();
+      fetchRecentFiles();
     };
     
     // Check immediately on mount
@@ -552,7 +540,7 @@ export default function DashboardPage() {
 
     try {
       // Fetch root folders (parentId=null)
-      const res = await fetch("${API_BASE}/api/folders?parentId=", {
+      const res = await fetch(`${API_BASE}/api/folders?parentId=`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -581,7 +569,7 @@ export default function DashboardPage() {
     if (!token) return;
 
     try {
-      const res = await fetch("${API_BASE}/api/files/root", {
+      const res = await fetch(`${API_BASE}/api/files/root`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -601,39 +589,48 @@ export default function DashboardPage() {
     }
   };
 
-  // Get or create a category folder
+  // Get or create a category folder (robust against backend list failures)
   const getOrCreateCategoryFolder = async (categoryName: string): Promise<number | null> => {
     if (!token) return null;
 
+    // Map category names to colors
+    const categoryColors: Record<string, string> = {
+      "Work": "blue",
+      "Personal": "green",
+      "Documents": "blue",
+      "Media": "purple",
+      "Important": "orange",
+    };
+
     try {
-      // Map category names to colors
-      const categoryColors: Record<string, string> = {
-        "Work": "blue",
-        "Personal": "green",
-        "Documents": "blue",
-        "Media": "purple",
-        "Important": "orange",
-      };
+      // 1) Try to find an existing folder with this name at root level
+      try {
+        const res = await fetch(`${API_BASE}/api/folders?parentId=`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
 
-      // First, try to find an existing folder with this name at root level
-      const res = await fetch("${API_BASE}/api/folders?parentId=", {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const categoryFolder = data.folders?.find((f: Folder) => f.name === categoryName && f.parentId === null);
-        
-        if (categoryFolder) {
-          return categoryFolder.id;
+        if (res.ok) {
+          const data = await res.json();
+          const categoryFolder = data.folders?.find((f: Folder) => f.name === categoryName && f.parentId === null);
+          
+          if (categoryFolder) {
+            return categoryFolder.id;
+          }
+        } else {
+          const errorData = await res.json().catch(() => ({}));
+          console.error(`Failed to list folders when resolving category '${categoryName}':`, res.status, errorData);
         }
+      } catch (err) {
+        console.error(`Error fetching folders when resolving category '${categoryName}':`, err);
+      }
 
-        // If not found, create it
-        const createRes = await fetch("${API_BASE}/api/folders/create", {
+      // 2) If not found or listing failed, try to create the category folder
+      try {
+        const createRes = await fetch(`${API_BASE}/api/folders/create`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -646,10 +643,18 @@ export default function DashboardPage() {
           }),
         });
 
-        if (createRes.ok) {
-          const createData = await createRes.json();
-          return createData.folder.id;
+        const createData = await createRes.json().catch(() => ({}));
+
+        if (!createRes.ok) {
+          console.error(`Failed to create category folder '${categoryName}':`, createRes.status, createData);
+          return null;
         }
+
+        if (createData && createData.folder && createData.folder.id) {
+          return createData.folder.id as number;
+        }
+      } catch (err) {
+        console.error(`Error creating category folder '${categoryName}':`, err);
       }
     } catch (err) {
       console.error(`Failed to get or create category folder ${categoryName}:`, err);
@@ -696,7 +701,7 @@ export default function DashboardPage() {
 
       if (categoryModalMode === "folder" && pendingFolderData) {
         // Create folder in the selected category
-        const res = await fetch("${API_BASE}/api/folders/create", {
+        const res = await fetch(`${API_BASE}/api/folders/create`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -753,7 +758,7 @@ export default function DashboardPage() {
         formData.append("file", pendingFile);
         formData.append("folderId", categoryFolderId.toString());
 
-        const res = await fetch("${API_BASE}/api/files/upload", {
+        const res = await fetch(`${API_BASE}/api/files/upload`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -1504,7 +1509,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col page-transition" style={{ backgroundColor: '#FAFAFA' }}>
+    <div suppressHydrationWarning className="min-h-screen flex flex-col page-transition" style={{ backgroundColor: '#FAFAFA' }}>
       <LeaveConfirmModal open={leaveOpen} onStay={onStay} onLeave={onLeave} />
       {/* Modern Navbar - Fixed Header */}
       <nav
@@ -1512,6 +1517,7 @@ export default function DashboardPage() {
         style={{ backgroundColor: '#FFFFFF', borderBottom: '1px solid #E5E7EB' }}
       >
         <div className="flex items-center justify-between">
+          {/* Left: Logo + Brand */}
           <div className="flex items-center gap-2.5">
             <FolderOpen className="w-6 h-6" style={{ color: '#64748B' }} />
             <h1
@@ -1526,43 +1532,40 @@ export default function DashboardPage() {
             </h1>
           </div>
 
-          <div className="flex items-center justify-center flex-1 min-w-0">
-            <div className="relative group w-full max-w-[500px]">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-200"
-                style={{ color: '#94A3B8' }}
-              />
-              <input
-                type="text"
-                placeholder="Search"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setVoiceError("");
-                }}
-                onFocus={() => setShowCommandBar(false)}
-                className="w-full pl-9 pr-10 py-2 bg-white border rounded-full focus:outline-none focus:border-[#2563EB] text-sm transition-all duration-200 focus:ring-2 focus:ring-[#2563EB]/15"
-                style={{
-                  borderColor: '#E2E8F0',
-                  color: '#0F172A',
-                }}
-              />
-              <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                <VoiceSearchButton
-                  onTranscript={(text) => {
-                    const processedText = processVoiceCommand(text);
-                    setSearchQuery(processedText);
+          {/* Center: Search (hydration-suppressed to avoid extension-injected attrs issues) */}
+          <div className="flex items-center justify-center flex-1">
+            <div suppressHydrationWarning>
+              <div className="relative group" style={{ width: '100%', maxWidth: '400px' }}>
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-200" style={{ color: '#94A3B8' }} />
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
                     setVoiceError("");
                   }}
-                  onError={(error) => {
-                    setVoiceError(error);
-                    setTimeout(() => setVoiceError(""), 5000);
-                  }}
+                  onFocus={() => setVoiceError("")}
+                  className="w-full pl-9 pr-10 py-2 bg-white border rounded-full focus:outline-none focus:border-[#2563EB] text-sm transition-all duration-200 hover:shadow-sm focus:shadow-md focus:ring-2 focus:ring-[#2563EB]/20"
+                  style={{ borderColor: '#E2E8F0', color: '#0F172A' }}
                 />
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                  <VoiceSearchButton
+                    onTranscript={(text) => {
+                      setSearchQuery(text);
+                      setVoiceError("");
+                    }}
+                    onError={(error) => {
+                      setVoiceError(error);
+                      setTimeout(() => setVoiceError(""), 5000);
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Right: Profile */}
           <div className="flex items-center gap-3">
             <ProfileDropdown userName={userName || ""} />
           </div>
@@ -2169,7 +2172,7 @@ export default function DashboardPage() {
             if (!token) return null;
             
             try {
-              const res = await fetch("${API_BASE}/api/folders/create", {
+              const res = await fetch(`${API_BASE}/api/folders/create`, {
                 method: "POST",
                 headers: {
                   "Authorization": `Bearer ${token}`,

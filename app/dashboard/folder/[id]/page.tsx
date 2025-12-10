@@ -200,35 +200,44 @@ export default function FolderDetailPage() {
     if (!token) return;
 
     const getOrCreateCategoryFolder = async (categoryName: string): Promise<number | null> => {
+      // Map category names to colors
+      const categoryColors: Record<string, string> = {
+        "Work": "blue",
+        "Personal": "green",
+        "Documents": "blue",
+        "Media": "purple",
+        "Important": "orange",
+      };
+
       try {
-        // Map category names to colors
-        const categoryColors: Record<string, string> = {
-          "Work": "blue",
-          "Personal": "green",
-          "Documents": "blue",
-          "Media": "purple",
-          "Important": "orange",
-        };
+        // 1) Try to find an existing folder with this name at root level
+        try {
+          const res = await fetch(`${API_BASE}/api/folders?parentId=`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
 
-        // First, try to find an existing folder with this name at root level
-        const res = await fetch("${API_BASE}/api/folders?parentId=", {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const categoryFolder = data.folders?.find((f: Folder) => f.name === categoryName && f.parentId === null);
-          
-          if (categoryFolder) {
-            return categoryFolder.id;
+          if (res.ok) {
+            const data = await res.json();
+            const categoryFolder = data.folders?.find((f: Folder) => f.name === categoryName && f.parentId === null);
+            
+            if (categoryFolder) {
+              return categoryFolder.id;
+            }
+          } else {
+            const errorData = await res.json().catch(() => ({}));
+            console.error(`Failed to list folders when resolving category '${categoryName}' (folder view):`, res.status, errorData);
           }
+        } catch (err) {
+          console.error(`Error fetching folders when resolving category '${categoryName}' (folder view):`, err);
+        }
 
-          // If not found, create it
-          const createRes = await fetch("${API_BASE}/api/folders/create", {
+        // 2) If not found or listing failed, try to create the category folder
+        try {
+          const createRes = await fetch(`${API_BASE}/api/folders/create`, {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -241,13 +250,21 @@ export default function FolderDetailPage() {
             }),
           });
 
-          if (createRes.ok) {
-            const createData = await createRes.json();
-            return createData.folder.id;
+          const createData = await createRes.json().catch(() => ({}));
+
+          if (!createRes.ok) {
+            console.error(`Failed to create category folder '${categoryName}' (folder view):`, createRes.status, createData);
+            return null;
           }
+
+          if (createData && createData.folder && createData.folder.id) {
+            return createData.folder.id as number;
+          }
+        } catch (err) {
+          console.error(`Error creating category folder '${categoryName}' (folder view):`, err);
         }
       } catch (err) {
-        console.error(`Failed to get or create category folder ${categoryName}:`, err);
+        console.error(`Failed to get or create category folder ${categoryName} (folder view):`, err);
       }
 
       return null;
@@ -359,7 +376,7 @@ export default function FolderDetailPage() {
     setError("");
 
     try {
-      const res = await fetch("${API_BASE}/api/folders/create", {
+      const res = await fetch(`${API_BASE}/api/folders/create`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -647,7 +664,7 @@ export default function FolderDetailPage() {
         formData.append("folderId", "");
       }
 
-      const res = await fetch("${API_BASE}/api/files/upload", {
+      const res = await fetch(`${API_BASE}/api/files/upload`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -749,7 +766,7 @@ export default function FolderDetailPage() {
         }
 
         // Create folder
-        const folderRes = await fetch("${API_BASE}/api/folders/create", {
+        const folderRes = await fetch(`${API_BASE}/api/folders/create`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -793,7 +810,7 @@ export default function FolderDetailPage() {
             formData.append("folderId", "");
           }
 
-          const res = await fetch("${API_BASE}/api/files/upload", {
+          const res = await fetch(`${API_BASE}/api/files/upload`, {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -1523,7 +1540,7 @@ export default function FolderDetailPage() {
                         
                         const folderData = await res.json();
                         
-                        const createRes = await fetch("${API_BASE}/api/folders/create", {
+                        const createRes = await fetch(`${API_BASE}/api/folders/create`, {
                           method: "POST",
                           headers: {
                             "Authorization": `Bearer ${token}`,
@@ -1686,7 +1703,7 @@ export default function FolderDetailPage() {
                       formData.append("folderId", "");
                     }
 
-                    const res = await fetch("${API_BASE}/api/files/upload", {
+                    const res = await fetch(`${API_BASE}/api/files/upload`, {
                       method: "POST",
                       headers: {
                         "Authorization": `Bearer ${token}`,
@@ -1726,63 +1743,64 @@ export default function FolderDetailPage() {
               e.stopPropagation();
             }}
             onDrop={async (e) => {
-              // Handle drag and drop from file system
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (!token) return;
-              
-              const files = Array.from(e.dataTransfer.files);
-              
-              if (files.length > 0) {
-                setUploading(true);
-                setError("");
-                
-                try {
-                  for (const file of files) {
-                    const formData = new FormData();
-                    formData.append("file", file);
-                    if (folderId) {
-                      formData.append("folderId", folderId.toString());
-                    } else {
-                      formData.append("folderId", "");
-                    }
+            // Handle drag and drop from file system
+            e.preventDefault();
+            e.stopPropagation();
 
-                    const res = await fetch("${API_BASE}/api/files/upload", {
-                      method: "POST",
-                      headers: {
-                        "Authorization": `Bearer ${token}`,
-                      },
-                      body: formData,
-                    });
+            if (!token) return;
 
-                    if (res.ok) {
-                      const data = await res.json();
-                      const newFile: AppFile = {
-                        id: data.file.id,
-                        name: data.file.name,
-                        url: data.file.url,
-                        size: data.file.size,
-                        mimetype: data.file.mimetype,
-                        createdAt: data.file.createdAt,
-                        folderId: data.file.folderId,
-                      };
-                      setFiles(prev => [newFile, ...prev]);
-                      // Add to recent items
-                      addRecentItem(data.file.id, 'file', data.file.name);
-                    }
-                  }
-                  
-                  setUploading(false);
+            const droppedFiles = Array.from(e.dataTransfer.files);
+
+            if (droppedFiles.length > 0) {
+              setUploading(true);
+              setError("");
+
+              try {
+                for (const file of droppedFiles) {
+                  const formData = new FormData();
+                  formData.append("file", file);
                   if (folderId) {
-                    fetchFolder();
+                    formData.append("folderId", folderId.toString());
+                  } else {
+                    formData.append("folderId", "");
                   }
-                } catch (err) {
-                  setError("Failed to upload files. Please try again.");
-                  setUploading(false);
+
+                  const res = await fetch(`${API_BASE}/api/files/upload`, {
+                    method: "POST",
+                    headers: {
+                      "Authorization": `Bearer ${token}`,
+                    },
+                    body: formData,
+                  });
+
+                  if (res.ok) {
+                    const data = await res.json();
+                    const newFile: AppFile = {
+                      id: data.file.id,
+                      name: data.file.name,
+                      url: data.file.url,
+                      size: data.file.size,
+                      mimetype: data.file.mimetype,
+                      createdAt: data.file.createdAt,
+                      folderId: data.file.folderId,
+                    };
+                    setFiles(prev => [newFile, ...prev]);
+                    // Add to recent items
+                    addRecentItem(data.file.id, 'file', data.file.name);
+                  }
                 }
+
+                setUploading(false);
+                if (folderId) {
+                  fetchFolder();
+                }
+              } catch (err) {
+                console.error("Failed to upload files via drag-and-drop:", err);
+                setError("Failed to upload files. Please try again.");
+                setUploading(false);
               }
-            }}
+            }
+          }}
             className="flex-1"
           >
             {/* Error Message */}

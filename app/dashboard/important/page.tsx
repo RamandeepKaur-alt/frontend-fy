@@ -116,32 +116,43 @@ export default function ImportantFoldersPage() {
     const getOrCreateCategoryFolder = async (categoryName: string): Promise<number | null> => {
       if (!token) return null;
 
+      const categoryColors: Record<string, string> = {
+        "Work": "blue",
+        "Personal": "green",
+        "Documents": "blue",
+        "Media": "purple",
+        "Important": "orange",
+      };
+
       try {
-        const categoryColors: Record<string, string> = {
-          "Work": "blue",
-          "Personal": "green",
-          "Documents": "blue",
-          "Media": "purple",
-          "Important": "orange",
-        };
+        // 1) Try to find an existing folder with this name at root level
+        try {
+          const res = await fetch(`${API_BASE}/api/folders?parentId=`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
 
-        const res = await fetch("${API_BASE}/api/folders?parentId=", {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const categoryFolder = data.folders?.find((f: Folder) => f.name === categoryName && f.parentId === null);
-          
-          if (categoryFolder) {
-            return categoryFolder.id;
+          if (res.ok) {
+            const data = await res.json();
+            const categoryFolder = data.folders?.find((f: Folder) => f.name === categoryName && f.parentId === null);
+            
+            if (categoryFolder) {
+              return categoryFolder.id;
+            }
+          } else {
+            const errorData = await res.json().catch(() => ({}));
+            console.error(`Failed to list folders when resolving category '${categoryName}' (important view):`, res.status, errorData);
           }
+        } catch (err) {
+          console.error(`Error fetching folders when resolving category '${categoryName}' (important view):`, err);
+        }
 
-          const createRes = await fetch("${API_BASE}/api/folders/create", {
+        // 2) If not found or listing failed, try to create the category folder
+        try {
+          const createRes = await fetch(`${API_BASE}/api/folders/create`, {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -154,13 +165,21 @@ export default function ImportantFoldersPage() {
             }),
           });
 
-          if (createRes.ok) {
-            const createData = await createRes.json();
-            return createData.folder.id;
+          const createData = await createRes.json().catch(() => ({}));
+
+          if (!createRes.ok) {
+            console.error(`Failed to create category folder '${categoryName}' (important view):`, createRes.status, createData);
+            return null;
           }
+
+          if (createData && createData.folder && createData.folder.id) {
+            return createData.folder.id as number;
+          }
+        } catch (err) {
+          console.error(`Error creating category folder '${categoryName}' (important view):`, err);
         }
       } catch (err) {
-        console.error(`Failed to get or create category folder ${categoryName}:`, err);
+        console.error(`Failed to get or create category folder ${categoryName} (important view):`, err);
       }
 
       return null;
@@ -200,7 +219,7 @@ export default function ImportantFoldersPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("${API_BASE}/api/folders/important", {
+      const res = await fetch(`${API_BASE}/api/folders/important`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,

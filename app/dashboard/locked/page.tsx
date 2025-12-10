@@ -205,32 +205,43 @@ export default function LockedFoldersPage() {
     const getOrCreateCategoryFolder = async (categoryName: string): Promise<number | null> => {
       if (!token) return null;
 
+      const categoryColors: Record<string, string> = {
+        "Work": "blue",
+        "Personal": "green",
+        "Documents": "blue",
+        "Media": "purple",
+        "Important": "orange",
+      };
+
       try {
-        const categoryColors: Record<string, string> = {
-          "Work": "blue",
-          "Personal": "green",
-          "Documents": "blue",
-          "Media": "purple",
-          "Important": "orange",
-        };
+        // 1) Try to find an existing folder with this name at root level
+        try {
+          const res = await fetch(`${API_BASE}/api/folders?parentId=`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
 
-        const res = await fetch("${API_BASE}/api/folders?parentId=", {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const categoryFolder = data.folders?.find((f: Folder) => f.name === categoryName && f.parentId === null);
-          
-          if (categoryFolder) {
-            return categoryFolder.id;
+          if (res.ok) {
+            const data = await res.json();
+            const categoryFolder = data.folders?.find((f: Folder) => f.name === categoryName && f.parentId === null);
+            
+            if (categoryFolder) {
+              return categoryFolder.id;
+            }
+          } else {
+            const errorData = await res.json().catch(() => ({}));
+            console.error(`Failed to list folders when resolving category '${categoryName}' (locked view):`, res.status, errorData);
           }
+        } catch (err) {
+          console.error(`Error fetching folders when resolving category '${categoryName}' (locked view):`, err);
+        }
 
-          const createRes = await fetch("${API_BASE}/api/folders/create", {
+        // 2) If not found or listing failed, try to create the category folder
+        try {
+          const createRes = await fetch(`${API_BASE}/api/folders/create`, {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -243,13 +254,21 @@ export default function LockedFoldersPage() {
             }),
           });
 
-          if (createRes.ok) {
-            const createData = await createRes.json();
-            return createData.folder.id;
+          const createData = await createRes.json().catch(() => ({}));
+
+          if (!createRes.ok) {
+            console.error(`Failed to create category folder '${categoryName}' (locked view):`, createRes.status, createData);
+            return null;
           }
+
+          if (createData && createData.folder && createData.folder.id) {
+            return createData.folder.id as number;
+          }
+        } catch (err) {
+          console.error(`Error creating category folder '${categoryName}' (locked view):`, err);
         }
       } catch (err) {
-        console.error(`Failed to get or create category folder ${categoryName}:`, err);
+        console.error(`Failed to get or create category folder ${categoryName} (locked view):`, err);
       }
 
       return null;
@@ -297,7 +316,7 @@ export default function LockedFoldersPage() {
       formData.append("folderId", ""); // Keep out of normal folders; locked flag controls visibility
       formData.append("locked", "true");
 
-      const res = await fetch("${API_BASE}/api/files/upload", {
+      const res = await fetch(`${API_BASE}/api/files/upload`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -345,7 +364,7 @@ export default function LockedFoldersPage() {
 
     try {
       // Check if user has lock password set
-      const lockPasswordRes = await fetch("${API_BASE}/api/auth/users/check-lock-password", {
+      const lockPasswordRes = await fetch(`${API_BASE}/api/auth/users/check-lock-password`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -361,7 +380,7 @@ export default function LockedFoldersPage() {
       }
 
       // Check if there are any locked folders
-      const foldersRes = await fetch("${API_BASE}/api/folders/locked", {
+      const foldersRes = await fetch(`${API_BASE}/api/folders/locked`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -399,7 +418,7 @@ export default function LockedFoldersPage() {
     if (!token) return;
 
     try {
-      const res = await fetch("${API_BASE}/api/files/locked", {
+      const res = await fetch(`${API_BASE}/api/files/locked`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -424,7 +443,7 @@ export default function LockedFoldersPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("${API_BASE}/api/folders/locked", {
+      const res = await fetch(`${API_BASE}/api/folders/locked`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -459,7 +478,7 @@ export default function LockedFoldersPage() {
 
     try {
       // Verify user's lock password
-      const res = await fetch("${API_BASE}/api/auth/users/verify-lock-password", {
+      const res = await fetch(`${API_BASE}/api/auth/users/verify-lock-password`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -510,7 +529,7 @@ export default function LockedFoldersPage() {
 
     try {
       // Set user's lock password
-      const res = await fetch("${API_BASE}/api/auth/users/set-lock-password", {
+      const res = await fetch(`${API_BASE}/api/auth/users/set-lock-password`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -1257,7 +1276,7 @@ export default function LockedFoldersPage() {
             if (!token) return null;
             
             try {
-              const res = await fetch("${API_BASE}/api/folders/create", {
+              const res = await fetch(`${API_BASE}/api/folders/create`, {
                 method: "POST",
                 headers: {
                   "Authorization": `Bearer ${token}`,

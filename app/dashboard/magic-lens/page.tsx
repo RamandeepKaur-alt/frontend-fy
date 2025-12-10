@@ -201,7 +201,7 @@ export default function MagicLensPage() {
       formData.append("file", fileObj);
       formData.append("folderId", "");
 
-      const uploadRes = await fetch("${API_BASE}/api/files/upload", {
+      const uploadRes = await fetch(`${API_BASE}/api/files/upload`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
