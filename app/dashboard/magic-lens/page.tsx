@@ -162,6 +162,7 @@ export default function MagicLensPage() {
 
       const uploadRes = await fetch(`${API_BASE}/api/files/upload`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Authorization": `Bearer ${token}`,
         },

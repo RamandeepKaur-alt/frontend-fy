@@ -318,6 +318,7 @@ export default function LockedFoldersPage() {
 
       const res = await fetch(`${API_BASE}/api/files/upload`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Authorization": `Bearer ${token}`,
         },
